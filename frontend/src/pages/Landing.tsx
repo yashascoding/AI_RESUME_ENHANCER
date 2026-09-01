@@ -182,18 +182,13 @@ export function Landing() {
                 </p>
               </div>
 
-              <div className="flex flex-col sm:flex-row gap-3">
+              <div>
                 <Link to="/analyze">
-                  <Button size="xl" className="bg-white text-zinc-900 hover:bg-zinc-200 w-full sm:w-auto">
+                  <Button size="xl" className="bg-white text-zinc-900 hover:bg-zinc-200">
                     Analyze My Resume
                     <ArrowRight className="h-4 w-4" />
                   </Button>
                 </Link>
-                <a href="#how-it-works">
-                  <Button variant="outline" size="xl" className="w-full sm:w-auto">
-                    See How It Works
-                  </Button>
-                </a>
               </div>
 
               <div className="flex flex-wrap items-center gap-3 text-xs text-zinc-500">

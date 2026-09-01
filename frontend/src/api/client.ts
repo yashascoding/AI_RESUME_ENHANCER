@@ -105,4 +105,23 @@ export async function getFileStatus(id: string) {
   return data
 }
 
+// ── Analysis History API ─────────────────────────────────────────────────
+
+export interface AnalysisHistoryItem {
+  id: string
+  created_at: string
+  ats_score: number
+  candidate_name: string
+}
+
+export async function listAnalyses(): Promise<AnalysisHistoryItem[]> {
+  const { data } = await api.get<AnalysisHistoryItem[]>("/analyses")
+  return data
+}
+
+export async function getAnalysisById(id: string): Promise<AnalysisResult> {
+  const { data } = await api.get<AnalysisResult>(`/analyses/${id}`)
+  return data
+}
+
 export default api

@@ -1,5 +1,5 @@
-import { createContext, useContext, useState, useCallback, type ReactNode } from "react"
-import { analyzeResume, rewriteResume } from "@/api/client"
+import { createContext, useContext, useState, useCallback, useEffect, type ReactNode } from "react"
+import { analyzeResume, rewriteResume, getAnalysisById } from "@/api/client"
 import type { AnalysisResult, RewrittenResume } from "@/types"
 
 interface AnalysisContextValue {
@@ -15,20 +15,51 @@ interface AnalysisContextValue {
   setJobDescription: (text: string) => void
   runAnalysis: (resumeText: string, jobDescription: string) => Promise<void>
   runRewrite: () => Promise<void>
+  loadAnalysis: (id: string) => Promise<void>
   reset: () => void
 }
 
 const AnalysisContext = createContext<AnalysisContextValue | null>(null)
 
+const STORAGE_KEY = "resume_enhancer_analysis"
+
+function loadPersisted() {
+  try {
+    const raw = localStorage.getItem(STORAGE_KEY)
+    if (raw) {
+      const data = JSON.parse(raw)
+      return {
+        result: data.result ?? null,
+        rewritten: data.rewritten ?? null,
+        resumeText: data.resumeText ?? "",
+        jobDescription: data.jobDescription ?? "",
+      }
+    }
+  } catch {}
+  return null
+}
+
+function persistState(result: AnalysisResult | null, rewritten: RewrittenResume | null, resumeText: string, jobDescription: string) {
+  try {
+    localStorage.setItem(STORAGE_KEY, JSON.stringify({ result, rewritten, resumeText, jobDescription }))
+  } catch {}
+}
+
 export function AnalysisProvider({ children }: { children: ReactNode }) {
-  const [result, setResult] = useState<AnalysisResult | null>(null)
-  const [rewritten, setRewritten] = useState<RewrittenResume | null>(null)
+  const persisted = loadPersisted()
+
+  const [result, setResult] = useState<AnalysisResult | null>(persisted?.result ?? null)
+  const [rewritten, setRewritten] = useState<RewrittenResume | null>(persisted?.rewritten ?? null)
   const [loading, setLoading] = useState(false)
   const [rewriting, setRewriting] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [step, setStep] = useState("")
-  const [resumeText, setResumeText] = useState("")
-  const [jobDescription, setJobDescription] = useState("")
+  const [resumeText, setResumeText] = useState(persisted?.resumeText ?? "")
+  const [jobDescription, setJobDescription] = useState(persisted?.jobDescription ?? "")
+
+  useEffect(() => {
+    persistState(result, rewritten, resumeText, jobDescription)
+  }, [result, rewritten, resumeText, jobDescription])
 
   const runAnalysis = useCallback(async (rt: string, jd: string) => {
     setLoading(true)
@@ -67,6 +98,19 @@ export function AnalysisProvider({ children }: { children: ReactNode }) {
     }
   }, [result, resumeText, jobDescription])
 
+  const loadAnalysis = useCallback(async (id: string) => {
+    setLoading(true)
+    setError(null)
+    try {
+      const data = await getAnalysisById(id)
+      setResult(data)
+    } catch (err: any) {
+      setError(err?.response?.data?.detail || err.message || "Failed to load analysis")
+    } finally {
+      setLoading(false)
+    }
+  }, [])
+
   const reset = useCallback(() => {
     setResult(null)
     setRewritten(null)
@@ -74,6 +118,7 @@ export function AnalysisProvider({ children }: { children: ReactNode }) {
     setStep("")
     setResumeText("")
     setJobDescription("")
+    try { localStorage.removeItem(STORAGE_KEY) } catch {}
   }, [])
 
   return (
@@ -91,6 +136,7 @@ export function AnalysisProvider({ children }: { children: ReactNode }) {
         setJobDescription,
         runAnalysis,
         runRewrite,
+        loadAnalysis,
         reset,
       }}
     >

@@ -7,6 +7,8 @@ from .ats_scoring import ats_scoring_node
 from .resume_rewriter import resume_rewriter_node
 from .interview_generator import interview_generator_node
 from .career_report import career_report_node
+from .combined_analysis import combined_analysis_node
+from .interview_and_report import interview_and_report_node
 
 __all__ = [
     "resume_parser_node",
@@ -18,4 +20,6 @@ __all__ = [
     "resume_rewriter_node",
     "interview_generator_node",
     "career_report_node",
+    "combined_analysis_node",
+    "interview_and_report_node",
 ]

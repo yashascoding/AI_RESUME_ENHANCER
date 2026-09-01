@@ -11,35 +11,35 @@ from pydantic import BaseModel, Field
 # ---------------------------------------------------------------------------
 
 class Education(BaseModel):
-    degree: str = Field(..., description="Degree or certification name")
-    institution: str = Field(..., description="School or institution name")
-    year: Optional[str] = Field(None, description="Graduation year or range")
-    details: Optional[str] = Field(None, description="Additional details like GPA, honors")
+    degree: str = Field(default="", description="Degree or certification name")
+    institution: str = Field(default="", description="School or institution name")
+    year: Optional[str] = Field(default="", description="Graduation year or range")
+    details: Optional[str] = Field(default="", description="Additional details like GPA, honors")
 
 
 class Project(BaseModel):
-    name: str = Field(..., description="Project name")
-    description: str = Field(..., description="One-line project description")
+    name: str = Field(default="", description="Project name")
+    description: str = Field(default="", description="One-line project description")
     technologies: list[str] = Field(default_factory=list, description="Technologies used")
     highlights: list[str] = Field(default_factory=list, description="Key achievements or features")
 
 
 class ExperienceEntry(BaseModel):
-    title: str = Field(..., description="Job title or role")
-    company: str = Field(..., description="Company or organization name")
+    title: str = Field(default="", description="Job title or role")
+    company: str = Field(default="", description="Company or organization name")
     duration: Optional[str] = Field(None, description="Employment duration")
-    description: str = Field(..., description="Role description and responsibilities")
+    description: str = Field(default="", description="Role description and responsibilities")
     highlights: list[str] = Field(default_factory=list, description="Key achievements")
 
 
 class Certifications(BaseModel):
-    name: str = Field(..., description="Certification name")
+    name: str = Field(default="", description="Certification name")
     issuer: Optional[str] = Field(None, description="Issuing organization")
     year: Optional[str] = Field(None, description="Year obtained")
 
 
 class ParsedResume(BaseModel):
-    name: str = Field(..., description="Candidate full name")
+    name: str = Field(default="", description="Candidate full name")
     email: Optional[str] = Field(None, description="Email address")
     phone: Optional[str] = Field(None, description="Phone number")
     summary: Optional[str] = Field(None, description="Professional summary or objective")
@@ -71,15 +71,15 @@ class ResumeSkills(BaseModel):
 # ---------------------------------------------------------------------------
 
 class ExperienceAnalysis(BaseModel):
-    project_quality: str = Field(..., description="Assessment of project quality")
-    internship_relevance: str = Field(..., description="Relevance of internships")
-    open_source: str = Field(..., description="Open source contributions assessment")
-    leadership: str = Field(..., description="Leadership examples assessment")
-    quantified_achievements: str = Field(..., description="Use of metrics and numbers")
-    action_verbs: str = Field(..., description="Quality of action verbs used")
-    business_impact: str = Field(..., description="Business impact demonstrated")
-    readability: str = Field(..., description="Resume readability assessment")
-    formatting: str = Field(..., description="Formatting quality assessment")
+    project_quality: str = Field(default="", description="Assessment of project quality")
+    internship_relevance: str = Field(default="", description="Relevance of internships")
+    open_source: str = Field(default="", description="Open source contributions assessment")
+    leadership: str = Field(default="", description="Leadership examples assessment")
+    quantified_achievements: str = Field(default="", description="Use of metrics and numbers")
+    action_verbs: str = Field(default="", description="Quality of action verbs used")
+    business_impact: str = Field(default="", description="Business impact demonstrated")
+    readability: str = Field(default="", description="Resume readability assessment")
+    formatting: str = Field(default="", description="Formatting quality assessment")
     strengths: list[str] = Field(default_factory=list, description="Identified strengths")
     weaknesses: list[str] = Field(default_factory=list, description="Identified weaknesses")
 
@@ -113,23 +113,23 @@ class GapAnalysis(BaseModel):
 # ---------------------------------------------------------------------------
 
 class ATSBreakdown(BaseModel):
-    skills_score: float = Field(..., ge=0, le=100)
-    projects_score: float = Field(..., ge=0, le=100)
-    experience_score: float = Field(..., ge=0, le=100)
-    keywords_score: float = Field(..., ge=0, le=100)
-    achievements_score: float = Field(..., ge=0, le=100)
-    formatting_score: float = Field(..., ge=0, le=100)
+    skills_score: float = Field(default=0.0, ge=0, le=100)
+    projects_score: float = Field(default=0.0, ge=0, le=100)
+    experience_score: float = Field(default=0.0, ge=0, le=100)
+    keywords_score: float = Field(default=0.0, ge=0, le=100)
+    achievements_score: float = Field(default=0.0, ge=0, le=100)
+    formatting_score: float = Field(default=0.0, ge=0, le=100)
 
 
 class ATSReason(BaseModel):
-    category: str = Field(..., description="Score category name")
-    score: float = Field(..., ge=0, le=100)
-    reason: str = Field(..., description="Explanation for this score")
+    category: str = Field(default="", description="Score category name")
+    score: float = Field(default=0.0, ge=0, le=100)
+    reason: str = Field(default="", description="Explanation for this score")
 
 
 class ATSScore(BaseModel):
-    overall_score: float = Field(..., ge=0, le=100)
-    breakdown: ATSBreakdown
+    overall_score: float = Field(default=0.0, ge=0, le=100)
+    breakdown: Optional[ATSBreakdown] = None
     reasons: list[ATSReason] = Field(default_factory=list)
 
 
@@ -138,16 +138,16 @@ class ATSScore(BaseModel):
 # ---------------------------------------------------------------------------
 
 class RewrittenSection(BaseModel):
-    section: str = Field(..., description="Section name (e.g. summary, projects)")
-    original: str = Field(..., description="Original content")
-    improved: str = Field(..., description="Improved content")
-    changes_made: str = Field(..., description="What was changed and why")
+    section: str = Field(default="", description="Section name (e.g. summary, projects)")
+    original: str = Field(default="", description="Original content")
+    improved: str = Field(default="", description="Improved content")
+    changes_made: str = Field(default="", description="What was changed and why")
 
 
 class RewrittenResume(BaseModel):
     rewritten_sections: list[RewrittenSection] = Field(default_factory=list)
-    full_improved_resume: str = Field(..., description="Complete improved resume text")
-    changes_summary: str = Field(..., description="Summary of all changes made")
+    full_improved_resume: str = Field(default="", description="Complete improved resume text")
+    changes_summary: str = Field(default="", description="Summary of all changes made")
 
 
 # ---------------------------------------------------------------------------
@@ -155,10 +155,10 @@ class RewrittenResume(BaseModel):
 # ---------------------------------------------------------------------------
 
 class InterviewQuestion(BaseModel):
-    question: str = Field(..., description="The interview question")
-    category: str = Field(..., description="Question category")
-    difficulty: str = Field(..., description="easy, medium, or hard")
-    focus: str = Field(..., description="What this question assesses")
+    question: str = Field(default="", description="The interview question")
+    category: str = Field(default="", description="Question category")
+    difficulty: str = Field(default="", description="easy, medium, or hard")
+    focus: str = Field(default="", description="What this question assesses")
 
 
 class InterviewQuestions(BaseModel):
@@ -173,13 +173,13 @@ class InterviewQuestions(BaseModel):
 # ---------------------------------------------------------------------------
 
 class HiringReadiness(BaseModel):
-    readiness_score: float = Field(..., ge=0, le=100)
+    readiness_score: float = Field(default=0.0, ge=0, le=100)
     top_strengths: list[str] = Field(default_factory=list)
     top_weaknesses: list[str] = Field(default_factory=list)
     high_priority_improvements: list[str] = Field(default_factory=list)
     suggested_roles: list[str] = Field(default_factory=list)
-    internship_readiness: str = Field(..., description="Ready / Almost Ready / Not Ready")
-    sde1_readiness: str = Field(..., description="Ready / Almost Ready / Not Ready")
+    internship_readiness: str = Field(default="Not Ready", description="Ready / Almost Ready / Not Ready")
+    sde1_readiness: str = Field(default="Not Ready", description="Ready / Almost Ready / Not Ready")
 
 
 # ---------------------------------------------------------------------------
@@ -187,7 +187,7 @@ class HiringReadiness(BaseModel):
 # ---------------------------------------------------------------------------
 
 class FinalReport(BaseModel):
-    ats_score: float = Field(..., ge=0, le=100)
+    ats_score: float = Field(default=0.0, ge=0, le=100)
     strengths: list[str] = Field(default_factory=list)
     weaknesses: list[str] = Field(default_factory=list)
     matched_skills: list[str] = Field(default_factory=list)
@@ -196,7 +196,7 @@ class FinalReport(BaseModel):
     improved_resume: Optional[str] = Field(None, description="Improved resume text if rewritten")
     interview_questions: Optional[InterviewQuestions] = Field(None)
     hiring_readiness: Optional[HiringReadiness] = None
-    overall_summary: str = Field(..., description="Comprehensive summary of the analysis")
+    overall_summary: str = Field(default="", description="Comprehensive summary of the analysis")
 
 
 # ---------------------------------------------------------------------------
@@ -230,3 +230,24 @@ class GraphState(TypedDict, total=False):
     final_report: Optional[FinalReport]
 
     error: Optional[str]
+
+
+# ---------------------------------------------------------------------------
+# Combined models for optimized pipeline (fewer LLM calls)
+# ---------------------------------------------------------------------------
+
+class CombinedAnalysis(BaseModel):
+    """Single LLM call: parse + skills + experience + JD + gap + ATS."""
+    parsed_resume: Optional[ParsedResume] = None
+    resume_skills: Optional[ResumeSkills] = None
+    experience_analysis: Optional[ExperienceAnalysis] = None
+    jd_skills: Optional[JDSkills] = None
+    gap: Optional[GapAnalysis] = None
+    ats_score: Optional[ATSScore] = None
+
+
+class InterviewAndReport(BaseModel):
+    """Single LLM call: interview questions + career report."""
+    interview_questions: Optional[InterviewQuestions] = None
+    hiring_readiness: Optional[HiringReadiness] = None
+    final_report: Optional[FinalReport] = None

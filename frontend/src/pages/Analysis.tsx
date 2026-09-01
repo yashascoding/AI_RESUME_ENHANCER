@@ -4,7 +4,7 @@ import { JDInput } from "@/components/resume/JDInput"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent } from "@/components/ui/card"
 import { useAnalysis } from "@/hooks/useAnalysis"
-import { Play, Loader2, ArrowRight, CheckCircle2, AlertCircle } from "lucide-react"
+import { Play, Loader2, ArrowRight, CheckCircle2, AlertCircle, RotateCcw } from "lucide-react"
 
 export function Analysis() {
   const {
@@ -17,6 +17,7 @@ export function Analysis() {
     error,
     step,
     runAnalysis,
+    reset,
   } = useAnalysis()
   const navigate = useNavigate()
 
@@ -24,6 +25,10 @@ export function Analysis() {
 
   const handleSubmit = async () => {
     await runAnalysis(resumeText, jobDescription)
+  }
+
+  const handleNewAnalysis = () => {
+    reset()
   }
 
   if (result) {
@@ -36,12 +41,18 @@ export function Analysis() {
             </div>
             <h2 className="text-xl font-bold mb-2">Analysis Complete</h2>
             <p className="text-sm text-zinc-400 mb-6 text-center max-w-sm">
-              Your resume has been analyzed through all 9 pipeline nodes. Review your comprehensive results.
+              Your resume has been analyzed. Review your results or start a new analysis.
             </p>
-            <Button onClick={() => navigate("/results")} className="gap-2 bg-white text-zinc-900 hover:bg-zinc-200">
-              View Results
-              <ArrowRight className="h-4 w-4" />
-            </Button>
+            <div className="flex flex-col sm:flex-row gap-3">
+              <Button onClick={() => navigate("/results")} className="gap-2 bg-white text-zinc-900 hover:bg-zinc-200">
+                View Results
+                <ArrowRight className="h-4 w-4" />
+              </Button>
+              <Button variant="outline" onClick={handleNewAnalysis} className="gap-2">
+                <RotateCcw className="h-4 w-4" />
+                New Analysis
+              </Button>
+            </div>
           </CardContent>
         </Card>
       </div>
@@ -70,7 +81,7 @@ export function Analysis() {
                 <Loader2 className="h-5 w-5 text-indigo-400 animate-spin" />
                 <div>
                   <p className="text-sm font-medium">{step || "Processing..."}</p>
-                  <p className="text-xs text-zinc-500">Running through 9 AI analysis nodes</p>
+                  <p className="text-xs text-zinc-500">2-3 AI calls, typically 15-30 seconds</p>
                 </div>
               </div>
               <div className="relative h-1.5 w-full overflow-hidden rounded-full bg-zinc-800">

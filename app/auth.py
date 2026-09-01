@@ -1,3 +1,11 @@
+import bcrypt as _bcrypt_mod
+# Fix for passlib + bcrypt 4.x compatibility (bcrypt 4.x removed __about__)
+if not hasattr(_bcrypt_mod, "__about__"):
+    class _About:
+        __version__ = _bcrypt_mod.__version__
+    _bcrypt_mod.__about__ = _About()
+
+import logging
 from datetime import datetime, timedelta, timezone
 from typing import Optional
 
@@ -8,6 +16,8 @@ from passlib.context import CryptContext
 from pydantic import BaseModel, EmailStr, Field
 
 from .db import database
+
+log = logging.getLogger("app.auth")
 
 # ── Config ──────────────────────────────────────────────────────────────────
 SECRET_KEY = "ai-resume-enhancer-secret-key-change-in-production"
@@ -68,7 +78,8 @@ def decode_token(token: str) -> dict:
     try:
         payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
         return payload
-    except JWTError:
+    except JWTError as e:
+        log.warning("Token decode failed: %s", e)
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Invalid or expired token",
@@ -80,12 +91,14 @@ async def get_current_user(credentials: HTTPAuthorizationCredentials = Depends(s
     payload = decode_token(credentials.credentials)
     user_id = payload.get("sub")
     if user_id is None:
+        log.warning("Token missing 'sub' claim")
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Invalid token payload",
         )
     user = await users_collection.find_one({"_id": user_id})
     if user is None:
+        log.warning("User not found: user_id=%s", user_id)
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="User not found",

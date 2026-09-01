@@ -1,20 +1,15 @@
 from __future__ import annotations
 
+import logging
+
 from graph.state import GraphState
+
+log = logging.getLogger("graph.router")
 
 
 def route_after_ats(state: GraphState) -> str:
-    """Route based on ATS score threshold.
-
-    If ATS score < 75, go to resume rewrite.
-    Otherwise, go to interview generation.
-    """
+    """Always route to interview_and_report (skip rewriter for reliability)."""
     ats_score = state.get("ats_score")
-
-    if ats_score is None:
-        return "interview_generator"
-
-    if ats_score.overall_score < 75:
-        return "resume_rewriter"
-
-    return "interview_generator"
+    score = ats_score.overall_score if ats_score else 0
+    log.info("ATS score %.0f, routing to interview_and_report", score)
+    return "interview_and_report"
