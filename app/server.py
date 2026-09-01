@@ -3,12 +3,15 @@ from __future__ import annotations
 import hashlib
 import json
 import logging
+import os
 import time
+from pathlib import Path
 from typing import Any
 
-from fastapi import FastAPI, Path, UploadFile, Depends, HTTPException, Request
+from fastapi import FastAPI, Path as PathParam, UploadFile, Depends, HTTPException, Request
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import JSONResponse
+from fastapi.responses import JSONResponse, FileResponse
+from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel, Field
 from uuid import uuid4
 
@@ -181,7 +184,7 @@ async def get_me(user: dict = Depends(get_current_user)):
 # ═══════════════════════════════════════════════════════════════════════════
 
 @app.get("/files/{id}")
-async def get_file_by_id(id: str = Path(..., description="ID of the file"), _user: dict = Depends(get_current_user)):
+async def get_file_by_id(id: str = PathParam(..., description="ID of the file"), _user: dict = Depends(get_current_user)):
     log.info("File lookup: id=%s user=%s", id, _user["email"])
     db_file = await files_collection.find_one({"_id": ObjectId(id)})
     if not db_file:
@@ -356,7 +359,7 @@ async def get_analysis_count(_user: dict = Depends(get_current_user)):
 
 
 @app.get("/analyses/{analysis_id}")
-async def get_analysis(analysis_id: str = Path(...), _user: dict = Depends(get_current_user)):
+async def get_analysis(analysis_id: str = PathParam(...), _user: dict = Depends(get_current_user)):
     """Get a specific analysis by ID."""
     log.info("Getting analysis: id=%s user=%s", analysis_id, _user["email"])
     try:
@@ -374,7 +377,7 @@ async def get_analysis(analysis_id: str = Path(...), _user: dict = Depends(get_c
 
 
 @app.delete("/analyses/{analysis_id}")
-async def delete_analysis(analysis_id: str = Path(...), _user: dict = Depends(get_current_user)):
+async def delete_analysis(analysis_id: str = PathParam(...), _user: dict = Depends(get_current_user)):
     """Delete a specific analysis by ID."""
     log.info("Deleting analysis: id=%s user=%s", analysis_id, _user["email"])
     result = await analyses_collection.delete_one({"_id": ObjectId(analysis_id), "user_id": _user["id"]})
@@ -383,3 +386,21 @@ async def delete_analysis(analysis_id: str = Path(...), _user: dict = Depends(ge
         raise HTTPException(status_code=404, detail="Analysis not found")
     log.info("Analysis deleted: id=%s", analysis_id)
     return {"status": "deleted"}
+
+
+# ═══════════════════════════════════════════════════════════════════════════
+# SERVE FRONTEND (Production)
+# ═══════════════════════════════════════════════════════════════════════════
+
+FRONTEND_DIR = Path(__file__).resolve().parent.parent / "frontend" / "dist"
+
+if FRONTEND_DIR.exists():
+    app.mount("/assets", StaticFiles(directory=str(FRONTEND_DIR / "assets")), name="static-assets")
+
+    @app.get("/{full_path:path}")
+    async def serve_spa(full_path: str):
+        """Serve the SPA for all non-API routes."""
+        file_path = FRONTEND_DIR / full_path
+        if file_path.is_file():
+            return FileResponse(str(file_path))
+        return FileResponse(str(FRONTEND_DIR / "index.html"))
