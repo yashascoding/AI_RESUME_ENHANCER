@@ -21,7 +21,7 @@ export function ATSScoreGauge({ score }: ATSScoreGaugeProps) {
           cy="50%"
           innerRadius="60%"
           outerRadius="90%"
-          barSize={12}
+          barSize={10}
           data={[{ value: score, fill: color }]}
           startAngle={180}
           endAngle={0}
@@ -33,17 +33,17 @@ export function ATSScoreGauge({ score }: ATSScoreGaugeProps) {
             tick={false}
           />
           <RadialBar
-            background={{ fill: "#e5e7eb" }}
+            background={{ fill: "#27272a" }}
             dataKey="value"
             cornerRadius={6}
           />
         </RadialBarChart>
       </ResponsiveContainer>
       <div className="mt-[-80px] text-center">
-        <div className="text-4xl font-bold" style={{ color }}>
+        <div className="text-4xl font-bold animate-score" style={{ color }}>
           {Math.round(score)}
         </div>
-        <div className="text-sm text-muted-foreground">ATS Score</div>
+        <div className="text-xs text-zinc-500 mt-1">ATS Score</div>
       </div>
     </div>
   )

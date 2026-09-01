@@ -1,7 +1,6 @@
 import type { ExperienceAnalysis } from "@/types"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
-import { Badge } from "@/components/ui/badge"
-import { Briefcase, CheckCircle, AlertTriangle } from "lucide-react"
+import { Briefcase, CheckCircle2, AlertTriangle } from "lucide-react"
 
 interface ExperienceCardProps {
   data: ExperienceAnalysis
@@ -25,15 +24,15 @@ export function ExperienceCard({ data }: ExperienceCardProps) {
       <Card>
         <CardHeader>
           <CardTitle className="text-lg flex items-center gap-2">
-            <Briefcase className="h-5 w-5" />
+            <Briefcase className="h-5 w-5 text-indigo-400" />
             Experience Analysis
           </CardTitle>
         </CardHeader>
         <CardContent className="space-y-3">
           {metrics.map(({ key, label }) => (
-            <div key={key} className="flex items-start gap-3">
-              <span className="text-sm font-medium min-w-[160px]">{label}</span>
-              <span className="text-sm text-muted-foreground">{data[key]}</span>
+            <div key={key} className="flex items-start gap-3 py-1.5">
+              <span className="text-sm text-zinc-400 min-w-[180px]">{label}</span>
+              <span className="text-sm text-zinc-300">{data[key]}</span>
             </div>
           ))}
         </CardContent>
@@ -43,16 +42,16 @@ export function ExperienceCard({ data }: ExperienceCardProps) {
         <Card>
           <CardHeader>
             <CardTitle className="text-base flex items-center gap-2">
-              <CheckCircle className="h-4 w-4 text-green-500" />
+              <CheckCircle2 className="h-4 w-4 text-emerald-400" />
               Strengths
             </CardTitle>
           </CardHeader>
           <CardContent>
             <div className="flex flex-wrap gap-1.5">
               {data.strengths.map((s, i) => (
-                <Badge key={i} variant="secondary" className="bg-green-100 text-green-800">
+                <span key={i} className="px-2.5 py-1 rounded-md text-xs font-medium bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">
                   {s}
-                </Badge>
+                </span>
               ))}
             </div>
           </CardContent>
@@ -61,16 +60,16 @@ export function ExperienceCard({ data }: ExperienceCardProps) {
         <Card>
           <CardHeader>
             <CardTitle className="text-base flex items-center gap-2">
-              <AlertTriangle className="h-4 w-4 text-amber-500" />
+              <AlertTriangle className="h-4 w-4 text-amber-400" />
               Weaknesses
             </CardTitle>
           </CardHeader>
           <CardContent>
             <div className="flex flex-wrap gap-1.5">
               {data.weaknesses.map((w, i) => (
-                <Badge key={i} variant="secondary" className="bg-amber-100 text-amber-800">
+                <span key={i} className="px-2.5 py-1 rounded-md text-xs font-medium bg-amber-500/10 text-amber-400 border border-amber-500/20">
                   {w}
-                </Badge>
+                </span>
               ))}
             </div>
           </CardContent>

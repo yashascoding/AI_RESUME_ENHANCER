@@ -7,7 +7,14 @@ import base64
 from dotenv import load_dotenv
 
 load_dotenv()
-client = Groq(api_key=os.getenv("GROQ_API_KEY"))
+
+_client = None
+
+def _get_client():
+    global _client
+    if _client is None:
+        _client = Groq(api_key=os.getenv("GROQ_API_KEY"))
+    return _client
 
 
 def encode_image(image_path):
@@ -41,6 +48,7 @@ async def process_file(id:str,file_path:str):
 
     images_base64=[encode_image(img) for img in images ]
 
+    client = _get_client()
     result = client.chat.completions.create(
     messages=[
         {

@@ -6,20 +6,20 @@ interface ScoreBreakdownProps {
 }
 
 const labels: Record<keyof ATSBreakdown, string> = {
-  skills_score: "Skills",
-  projects_score: "Projects",
-  experience_score: "Experience",
-  keywords_score: "Keywords",
-  achievements_score: "Achievements",
+  skills_score: "Skills Match",
+  projects_score: "Project Quality",
+  experience_score: "Experience Relevance",
+  keywords_score: "Keyword Match",
+  achievements_score: "Achievement Strength",
   formatting_score: "Formatting",
 }
 
-const colors: Record<keyof ATSBreakdown, string> = {
-  skills_score: "bg-blue-500",
+const barColors: Record<keyof ATSBreakdown, string> = {
+  skills_score: "bg-indigo-500",
   projects_score: "bg-purple-500",
-  experience_score: "bg-green-500",
-  keywords_score: "bg-orange-500",
-  achievements_score: "bg-pink-500",
+  experience_score: "bg-emerald-500",
+  keywords_score: "bg-amber-500",
+  achievements_score: "bg-rose-500",
   formatting_score: "bg-cyan-500",
 }
 
@@ -29,16 +29,16 @@ export function ScoreBreakdown({ breakdown }: ScoreBreakdownProps) {
       <CardHeader>
         <CardTitle className="text-lg">Score Breakdown</CardTitle>
       </CardHeader>
-      <CardContent className="space-y-3">
+      <CardContent className="space-y-4">
         {(Object.keys(labels) as (keyof ATSBreakdown)[]).map((key) => (
-          <div key={key} className="space-y-1">
+          <div key={key} className="space-y-1.5">
             <div className="flex justify-between text-sm">
-              <span>{labels[key]}</span>
-              <span className="font-medium">{breakdown[key]}/100</span>
+              <span className="text-zinc-400">{labels[key]}</span>
+              <span className="font-medium text-white">{breakdown[key]}<span className="text-zinc-600">/100</span></span>
             </div>
-            <div className="h-2 rounded-full bg-muted overflow-hidden">
+            <div className="h-2 rounded-full bg-zinc-800 overflow-hidden">
               <div
-                className={`h-full rounded-full transition-all ${colors[key]}`}
+                className={`h-full rounded-full transition-all duration-500 ease-out ${barColors[key]}`}
                 style={{ width: `${breakdown[key]}%` }}
               />
             </div>

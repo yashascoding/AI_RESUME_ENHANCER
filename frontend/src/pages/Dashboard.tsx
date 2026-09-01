@@ -1,15 +1,18 @@
 import { Link } from "react-router-dom"
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
+import { Card, CardContent } from "@/components/ui/card"
 import {
   FileSearch,
+  ArrowRight,
   BarChart3,
+  Target,
   MessageSquare,
   PenLine,
-  ArrowRight,
   Sparkles,
-  Target,
+  TrendingUp,
+  CheckCircle2,
 } from "lucide-react"
+import { useAnalysis } from "@/hooks/useAnalysis"
 
 const features = [
   {
@@ -44,63 +47,111 @@ const features = [
   },
 ]
 
+const steps = [
+  { num: 1, title: "Upload Resume", description: "Drop your PDF or paste text" },
+  { num: 2, title: "Match Job Description", description: "Paste the target role" },
+  { num: 3, title: "AI Analysis", description: "9-node pipeline processes" },
+  { num: 4, title: "Review Results", description: "ATS score, skills, gaps" },
+  { num: 5, title: "Improve & Prepare", description: "Rewrite and interview prep" },
+]
+
 export function Dashboard() {
+  const { result } = useAnalysis()
+
   return (
-    <div className="space-y-8">
-      <div className="text-center space-y-4">
-        <h1 className="text-3xl font-bold">Resume Analyzer</h1>
-        <p className="text-muted-foreground max-w-2xl mx-auto">
-          Powered by LangGraph multi-agent pipeline. Get comprehensive resume analysis,
-          ATS scoring, skills gap analysis, and AI-powered improvement suggestions.
-        </p>
-        <Link to="/analyze">
-          <Button size="lg" className="gap-2">
-            <FileSearch className="h-5 w-5" />
-            Start New Analysis
-            <ArrowRight className="h-4 w-4" />
-          </Button>
-        </Link>
+    <div className="space-y-8 animate-fade-in">
+      {/* Hero */}
+      <div className="relative overflow-hidden rounded-2xl border border-zinc-800 bg-[#0f0f12] p-8 lg:p-12">
+        <div className="absolute inset-0 bg-[linear-gradient(to_right,#18181b_1px,transparent_1px),linear-gradient(to_bottom,#18181b_1px,transparent_1px)] bg-[size:3rem_3rem] [mask-image:radial-gradient(ellipse_60%_60%_at_50%_50%,#000_70%,transparent_100%)] opacity-30" />
+        <div className="relative">
+          <h1 className="text-2xl lg:text-3xl font-bold tracking-tight mb-2">
+            AI Resume Enhancer
+          </h1>
+          <p className="text-zinc-400 max-w-lg mb-6">
+            Optimize your resume for the roles you actually want. Powered by a 9-node LangGraph AI pipeline.
+          </p>
+          <div className="flex flex-col sm:flex-row gap-3">
+            <Link to="/analyze">
+              <Button size="lg" className="bg-white text-zinc-900 hover:bg-zinc-200 gap-2">
+                <FileSearch className="h-4 w-4" />
+                Start New Analysis
+                <ArrowRight className="h-4 w-4" />
+              </Button>
+            </Link>
+            {result && (
+              <Link to="/results">
+                <Button variant="outline" size="lg" className="gap-2">
+                  <BarChart3 className="h-4 w-4" />
+                  View Last Results
+                </Button>
+              </Link>
+            )}
+          </div>
+        </div>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-        {features.map((feature) => (
-          <Card key={feature.title} className="hover:shadow-md transition-shadow">
-            <CardHeader className="pb-2">
+      {/* Stats */}
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+        {[
+          { label: "Pipeline Nodes", value: "9", icon: Sparkles, color: "text-indigo-400" },
+          { label: "Data Models", value: "16", icon: TrendingUp, color: "text-emerald-400" },
+          { label: "Question Categories", value: "4", icon: MessageSquare, color: "text-amber-400" },
+          { label: "Analysis Steps", value: "5", icon: CheckCircle2, color: "text-rose-400" },
+        ].map((stat) => (
+          <Card key={stat.label}>
+            <CardContent className="p-5">
               <div className="flex items-center gap-3">
-                <div className="p-2 rounded-lg bg-primary/10">
-                  <feature.icon className="h-5 w-5 text-primary" />
+                <div className="h-9 w-9 rounded-lg bg-zinc-800 flex items-center justify-center">
+                  <stat.icon className={`h-4 w-4 ${stat.color}`} />
                 </div>
-                <CardTitle className="text-base">{feature.title}</CardTitle>
+                <div>
+                  <div className="text-2xl font-bold">{stat.value}</div>
+                  <div className="text-xs text-zinc-500">{stat.label}</div>
+                </div>
               </div>
-            </CardHeader>
-            <CardContent>
-              <p className="text-sm text-muted-foreground">{feature.description}</p>
             </CardContent>
           </Card>
         ))}
       </div>
 
-      <Card className="border-dashed">
-        <CardContent className="flex flex-col items-center justify-center py-8">
-          <div className="grid grid-cols-3 gap-8 text-center mb-6">
-            <div>
-              <div className="text-2xl font-bold">9</div>
-              <div className="text-xs text-muted-foreground">Analysis Nodes</div>
+      {/* How It Works */}
+      <div>
+        <h2 className="text-lg font-semibold mb-4">How it works</h2>
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-3">
+          {steps.map((step, i) => (
+            <div key={step.num} className="relative p-4 rounded-xl border border-zinc-800 bg-[#0f0f12]">
+              <div className="flex items-center gap-2 mb-2">
+                <span className="h-6 w-6 rounded-md bg-zinc-800 flex items-center justify-center text-xs font-bold text-zinc-400">
+                  {step.num}
+                </span>
+                {i < steps.length - 1 && (
+                  <div className="hidden lg:block flex-1 h-px bg-zinc-800" />
+                )}
+              </div>
+              <p className="text-sm font-medium mb-0.5">{step.title}</p>
+              <p className="text-xs text-zinc-500">{step.description}</p>
             </div>
-            <div>
-              <div className="text-2xl font-bold">16</div>
-              <div className="text-xs text-muted-foreground">Data Models</div>
+          ))}
+        </div>
+      </div>
+
+      {/* Features */}
+      <div>
+        <h2 className="text-lg font-semibold mb-4">Capabilities</h2>
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+          {features.map((feature) => (
+            <div key={feature.title} className="group p-5 rounded-xl border border-zinc-800 bg-[#0f0f12] hover:border-zinc-700 transition-colors">
+              <div className="flex items-center gap-3 mb-3">
+                <div className="h-8 w-8 rounded-lg bg-zinc-800 flex items-center justify-center group-hover:bg-indigo-500/10 transition-colors">
+                  <feature.icon className="h-4 w-4 text-zinc-300 group-hover:text-indigo-400 transition-colors" />
+                </div>
+                <h3 className="text-sm font-semibold">{feature.title}</h3>
+              </div>
+              <p className="text-xs text-zinc-500 leading-relaxed">{feature.description}</p>
             </div>
-            <div>
-              <div className="text-2xl font-bold">4</div>
-              <div className="text-xs text-muted-foreground">Question Categories</div>
-            </div>
-          </div>
-          <p className="text-sm text-muted-foreground">
-            Each analysis runs through 9 specialized AI nodes for comprehensive results
-          </p>
-        </CardContent>
-      </Card>
+          ))}
+        </div>
+      </div>
     </div>
   )
 }

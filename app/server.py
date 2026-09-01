@@ -1,6 +1,8 @@
 from __future__ import annotations
 
-from fastapi import FastAPI, Path, UploadFile
+from typing import Any
+
+from fastapi import FastAPI, Path, UploadFile, Depends
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel, Field
 from uuid import uuid4
@@ -14,26 +16,17 @@ from bson import ObjectId
 
 from graph import build_graph
 from graph.state import (
-    ATSBreakdown,
-    ATSReason,
-    ATSScore,
-    Education,
-    ExperienceAnalysis,
-    ExperienceEntry,
-    FinalReport,
-    GapAnalysis,
-    HiringReadiness,
-    InterviewQuestion,
-    InterviewQuestions,
-    JDSkills,
-    ParsedResume,
-    Project,
-    Certifications,
-    ResumeSkills,
-    RewrittenResume,
-    RewrittenSection,
+    ATSBreakdown, ATSReason, ATSScore, Education, ExperienceAnalysis,
+    ExperienceEntry, FinalReport, GapAnalysis, HiringReadiness,
+    InterviewQuestion, InterviewQuestions, JDSkills, ParsedResume,
+    Project, Certifications, ResumeSkills, RewrittenResume, RewrittenSection,
 )
 
+from .auth import (
+    UserCreate, UserLogin, TokenResponse, UserPayload,
+    hash_password, verify_password, create_access_token,
+    get_current_user, users_collection,
+)
 
 app = FastAPI()
 
@@ -46,9 +39,7 @@ app.add_middleware(
 )
 
 
-# ---------------------------------------------------------------------------
-# Request / Response models
-# ---------------------------------------------------------------------------
+# ── Request models ──────────────────────────────────────────────────────────
 
 class AnalyzeRequest(BaseModel):
     resume_text: str = Field(..., description="Full resume text")
@@ -64,9 +55,7 @@ class RewriteRequest(BaseModel):
     weaknesses: list[str] = []
 
 
-# ---------------------------------------------------------------------------
-# Helpers – serialize Pydantic models to dicts for JSON response
-# ---------------------------------------------------------------------------
+# ── Serialization helper ───────────────────────────────────────────────────
 
 def _serialize(obj: object) -> object:
     if isinstance(obj, BaseModel):
@@ -76,17 +65,72 @@ def _serialize(obj: object) -> object:
     return obj
 
 
-# ---------------------------------------------------------------------------
-# Routes
-# ---------------------------------------------------------------------------
+# ═══════════════════════════════════════════════════════════════════════════
+# PUBLIC ROUTES
+# ═══════════════════════════════════════════════════════════════════════════
 
 @app.get("/")
 def hello():
     return {"status": "Healthy"}
 
 
+# ── Auth: Register ─────────────────────────────────────────────────────────
+
+@app.post("/auth/register", response_model=TokenResponse)
+async def register(req: UserCreate):
+    existing = await users_collection.find_one({"email": req.email})
+    if existing:
+        from fastapi import HTTPException
+        raise HTTPException(status_code=409, detail="Email already registered")
+
+    user_id = str(uuid4())
+    hashed = hash_password(req.password)
+
+    await users_collection.insert_one({
+        "_id": user_id,
+        "name": req.name,
+        "email": req.email,
+        "password": hashed,
+        "created_at": __import__("datetime").datetime.now(__import__("datetime").timezone.utc).isoformat(),
+    })
+
+    token = create_access_token({"sub": user_id, "email": req.email})
+    return TokenResponse(
+        access_token=token,
+        user={"id": user_id, "name": req.name, "email": req.email},
+    )
+
+
+# ── Auth: Login ────────────────────────────────────────────────────────────
+
+@app.post("/auth/login", response_model=TokenResponse)
+async def login(req: UserLogin):
+    from fastapi import HTTPException
+
+    user = await users_collection.find_one({"email": req.email})
+    if not user or not verify_password(req.password, user["password"]):
+        raise HTTPException(status_code=401, detail="Invalid email or password")
+
+    token = create_access_token({"sub": str(user["_id"]), "email": user["email"]})
+    return TokenResponse(
+        access_token=token,
+        user={"id": str(user["_id"]), "name": user["name"], "email": user["email"]},
+    )
+
+
+# ── Auth: Get current user ────────────────────────────────────────────────
+
+@app.get("/auth/me", response_model=UserPayload)
+async def get_me(user: dict = Depends(get_current_user)):
+    return UserPayload(id=user["id"], name=user["name"], email=user["email"])
+
+
+# ═══════════════════════════════════════════════════════════════════════════
+# PROTECTED ROUTES (require JWT)
+# ═══════════════════════════════════════════════════════════════════════════
+
 @app.get("/files/{id}")
-async def get_file_by_id(id: str = Path(..., description="ID of the file")):
+async def get_file_by_id(id: str = Path(..., description="ID of the file"), _user: dict = Depends(get_current_user)):
     db_file = await files_collection.find_one({"_id": ObjectId(id)})
     if not db_file:
         return {"error": "File not found"}
@@ -99,99 +143,68 @@ async def get_file_by_id(id: str = Path(..., description="ID of the file")):
 
 
 @app.post("/upload")
-async def upload_file(file: UploadFile):
+async def upload_file(file: UploadFile, _user: dict = Depends(get_current_user)):
     file_id = str(uuid4())
-
     db_file = await files_collection.insert_one(
-        document=FileSchema(
-            name=file.filename,
-            status="saving",
-        )
+        document=FileSchema(name=file.filename, status="saving")
     )
-
     file_path = f"uploads/{file_id}/{file.filename}"
     await save_to_disk(file=await file.read(), path=file_path)
-
     q.enqueue(process_file, str(db_file.inserted_id), file_path)
-
     await files_collection.update_one(
-        {"_id": db_file.inserted_id},
-        {"$set": {"status": "queued"}},
+        {"_id": db_file.inserted_id}, {"$set": {"status": "queued"}}
     )
-
     return {"file id": str(db_file.inserted_id)}
 
 
 @app.post("/analyze")
-async def analyze_resume(req: AnalyzeRequest):
+async def analyze_resume(req: AnalyzeRequest, _user: dict = Depends(get_current_user)):
     """Run the full LangGraph resume analysis pipeline and return all node outputs."""
     graph = build_graph(ai_service)
-
     initial_state = {
         "resume_text": req.resume_text,
         "job_description": req.job_description,
     }
-
     result = await graph.ainvoke(initial_state)
-
     response: dict[str, Any] = {}
-
     for key in [
-        "parsed_resume",
-        "resume_skills",
-        "experience_analysis",
-        "jd_skills",
-        "ats_score",
-        "ats_breakdown",
-        "rewritten_resume",
-        "interview_questions",
-        "hiring_readiness",
-        "final_report",
+        "parsed_resume", "resume_skills", "experience_analysis", "jd_skills",
+        "ats_score", "ats_breakdown", "rewritten_resume", "interview_questions",
+        "hiring_readiness", "final_report",
     ]:
         val = result.get(key)
         if val is not None:
             response[key] = _serialize(val)
-
     response["matched_skills"] = result.get("matched_skills", [])
     response["missing_skills"] = result.get("missing_skills", [])
     response["missing_keywords"] = result.get("missing_keywords", [])
     response["recommendations"] = result.get("recommendations", [])
     response["strengths"] = result.get("strengths", [])
     response["weaknesses"] = result.get("weaknesses", [])
-
     return response
 
 
 @app.post("/rewrite")
-async def rewrite_resume(req: RewriteRequest):
+async def rewrite_resume(req: RewriteRequest, _user: dict = Depends(get_current_user)):
     """Run only the resume rewriter node to enhance a resume."""
     from graph.nodes import resume_rewriter_node
     from graph.state import GraphState
-
     state: GraphState = {
         "resume_text": req.resume_text,
         "job_description": req.job_description,
     }
-
     if req.ats_score is not None:
         state["ats_score"] = ATSScore(
             overall_score=req.ats_score,
             breakdown=ATSBreakdown(
-                skills_score=0,
-                projects_score=0,
-                experience_score=0,
-                keywords_score=0,
-                achievements_score=0,
-                formatting_score=0,
+                skills_score=0, projects_score=0, experience_score=0,
+                keywords_score=0, achievements_score=0, formatting_score=0,
             ),
             reasons=[],
         )
-
     state["missing_skills"] = req.missing_skills
     state["missing_keywords"] = req.missing_keywords
     state["weaknesses"] = req.weaknesses
-
     node_fn = resume_rewriter_node(ai_service)
     new_state = await node_fn(state)
-
     return _serialize(new_state.get("rewritten_resume"))

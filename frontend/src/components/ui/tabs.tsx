@@ -26,7 +26,7 @@ function TabsList({ className, ...props }: React.ComponentProps<"div">) {
   return (
     <div
       className={cn(
-        "inline-flex h-9 items-center justify-center rounded-lg bg-muted p-1 text-muted-foreground",
+        "inline-flex h-10 items-center justify-center rounded-lg bg-zinc-800/50 p-1 text-muted-foreground border border-zinc-800",
         className
       )}
       {...props}
@@ -40,8 +40,9 @@ function TabsTrigger({ className, value: triggerValue, ...props }: React.Compone
   return (
     <button
       className={cn(
-        "inline-flex items-center justify-center whitespace-nowrap rounded-md px-3 py-1 text-sm font-medium ring-offset-background transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50",
-        isActive && "bg-background text-foreground shadow",
+        "inline-flex items-center justify-center whitespace-nowrap rounded-md px-3 py-1.5 text-sm font-medium transition-all duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background disabled:pointer-events-none disabled:opacity-50 cursor-pointer",
+        isActive && "bg-zinc-700 text-white shadow-sm",
+        !isActive && "text-zinc-400 hover:text-zinc-200 hover:bg-zinc-800",
         className
       )}
       data-state={isActive ? "active" : "inactive"}
@@ -57,7 +58,7 @@ function TabsContent({ className, value: contentValue, ...props }: React.Compone
   return (
     <div
       className={cn(
-        "mt-2 ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2",
+        "mt-4 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background animate-fade-in",
         className
       )}
       {...props}

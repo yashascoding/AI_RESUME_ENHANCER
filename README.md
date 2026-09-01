@@ -244,6 +244,6 @@ rq worker
 
 **Structured outputs (Pydantic)** — Every node returns validated JSON so the frontend can render charts, tables, and tabs reliably.
 
-**Conditional rewriting** — Rewriting runs only when ATS score &lt; 75, saving LLM calls for resumes that already score well.
+**Conditional rewriting** — Rewriting runs only when ATS score &lt; 75, saving LLM call for resumes that already score well.
 
 **Separate `/rewrite` endpoint** — Allows on-demand enhancement from the Results page without re-running the full pipeline.

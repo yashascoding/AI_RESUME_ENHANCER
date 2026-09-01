@@ -2,7 +2,7 @@ import type { HiringReadiness } from "@/types"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Progress } from "@/components/ui/progress"
-import { Trophy, Target, Lightbulb, Briefcase } from "lucide-react"
+import { Trophy, Target, Lightbulb, Briefcase, CheckCircle2 } from "lucide-react"
 
 interface HiringReadinessProps {
   data: HiringReadiness
@@ -11,15 +11,15 @@ interface HiringReadinessProps {
 function ReadinessBadge({ label, value }: { label: string; value: string }) {
   const color =
     value === "Ready"
-      ? "bg-green-100 text-green-800"
+      ? "bg-emerald-500/10 text-emerald-400 border-emerald-500/20"
       : value === "Almost Ready"
-      ? "bg-amber-100 text-amber-800"
-      : "bg-red-100 text-red-800"
+      ? "bg-amber-500/10 text-amber-400 border-amber-500/20"
+      : "bg-red-500/10 text-red-400 border-red-500/20"
 
   return (
-    <div className="flex items-center justify-between p-3 rounded-lg bg-muted/50">
-      <span className="text-sm font-medium">{label}</span>
-      <Badge variant="secondary" className={color}>{value}</Badge>
+    <div className="flex items-center justify-between p-3 rounded-lg bg-zinc-800/50 border border-zinc-800">
+      <span className="text-sm text-zinc-400">{label}</span>
+      <Badge variant="secondary" className={`border ${color}`}>{value}</Badge>
     </div>
   )
 }
@@ -30,15 +30,15 @@ export function HiringReadiness({ data }: HiringReadinessProps) {
       <Card>
         <CardHeader>
           <CardTitle className="text-lg flex items-center gap-2">
-            <Trophy className="h-5 w-5" />
+            <Trophy className="h-5 w-5 text-amber-400" />
             Hiring Readiness
           </CardTitle>
         </CardHeader>
         <CardContent className="space-y-4">
           <div>
-            <div className="flex justify-between mb-1">
-              <span className="text-sm font-medium">Readiness Score</span>
-              <span className="text-sm font-bold">{data.readiness_score}/100</span>
+            <div className="flex justify-between mb-2">
+              <span className="text-sm text-zinc-400">Readiness Score</span>
+              <span className="text-sm font-bold text-white">{data.readiness_score}/100</span>
             </div>
             <Progress value={data.readiness_score} />
           </div>
@@ -52,16 +52,16 @@ export function HiringReadiness({ data }: HiringReadinessProps) {
         <Card>
           <CardHeader>
             <CardTitle className="text-base flex items-center gap-2">
-              <Target className="h-4 w-4 text-green-500" />
+              <CheckCircle2 className="h-4 w-4 text-emerald-400" />
               Top Strengths
             </CardTitle>
           </CardHeader>
           <CardContent>
-            <ul className="space-y-1.5">
+            <ul className="space-y-2">
               {data.top_strengths.map((s, i) => (
-                <li key={i} className="text-sm flex items-start gap-2">
-                  <span className="mt-1 h-1.5 w-1.5 rounded-full bg-green-500 shrink-0" />
-                  {s}
+                <li key={i} className="text-sm flex items-start gap-2.5">
+                  <span className="mt-1 h-1.5 w-1.5 rounded-full bg-emerald-400 shrink-0" />
+                  <span className="text-zinc-300">{s}</span>
                 </li>
               ))}
             </ul>
@@ -71,16 +71,16 @@ export function HiringReadiness({ data }: HiringReadinessProps) {
         <Card>
           <CardHeader>
             <CardTitle className="text-base flex items-center gap-2">
-              <Lightbulb className="h-4 w-4 text-amber-500" />
+              <Lightbulb className="h-4 w-4 text-amber-400" />
               Priority Improvements
             </CardTitle>
           </CardHeader>
           <CardContent>
-            <ul className="space-y-1.5">
+            <ul className="space-y-2">
               {data.high_priority_improvements.map((imp, i) => (
-                <li key={i} className="text-sm flex items-start gap-2">
-                  <span className="mt-1 h-1.5 w-1.5 rounded-full bg-amber-500 shrink-0" />
-                  {imp}
+                <li key={i} className="text-sm flex items-start gap-2.5">
+                  <span className="mt-1 h-1.5 w-1.5 rounded-full bg-amber-400 shrink-0" />
+                  <span className="text-zinc-300">{imp}</span>
                 </li>
               ))}
             </ul>
@@ -92,16 +92,16 @@ export function HiringReadiness({ data }: HiringReadinessProps) {
         <Card>
           <CardHeader>
             <CardTitle className="text-base flex items-center gap-2">
-              <Briefcase className="h-4 w-4 text-blue-500" />
+              <Briefcase className="h-4 w-4 text-indigo-400" />
               Suggested Roles
             </CardTitle>
           </CardHeader>
           <CardContent>
             <div className="flex flex-wrap gap-1.5">
               {data.suggested_roles.map((role) => (
-                <Badge key={role} variant="secondary" className="bg-blue-100 text-blue-800">
+                <span key={role} className="px-2.5 py-1 rounded-md text-xs font-medium bg-indigo-500/10 text-indigo-400 border border-indigo-500/20">
                   {role}
-                </Badge>
+                </span>
               ))}
             </div>
           </CardContent>

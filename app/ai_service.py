@@ -168,12 +168,18 @@ class AIService:
     """Groq-based AI service implementing the interface expected by LangGraph nodes."""
 
     def __init__(self) -> None:
-        api_key = os.environ.get("GROQ_API_KEY", "")
-        if not api_key:
-            raise ValueError("GROQ_API_KEY not set. Check your .env file.")
-        self.client = Groq(api_key=api_key)
+        self._client = None
         self.model = "allam-2-7b"
         self._schema_cache: dict[str, str] = {}
+
+    @property
+    def client(self):
+        if self._client is None:
+            api_key = os.environ.get("GROQ_API_KEY", "")
+            if not api_key:
+                raise ValueError("GROQ_API_KEY not set. Check your .env file.")
+            self._client = Groq(api_key=api_key)
+        return self._client
 
     async def generate(
         self,

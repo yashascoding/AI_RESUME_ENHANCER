@@ -20,7 +20,7 @@ export function InterviewQuestions({ data }: InterviewQuestionsProps) {
     <Card>
       <CardHeader>
         <CardTitle className="text-lg flex items-center gap-2">
-          <MessageSquare className="h-5 w-5" />
+          <MessageSquare className="h-5 w-5 text-indigo-400" />
           Interview Questions
         </CardTitle>
       </CardHeader>
@@ -40,7 +40,7 @@ export function InterviewQuestions({ data }: InterviewQuestionsProps) {
                 <QuestionCard key={i} question={q} />
               ))}
               {s.questions.length === 0 && (
-                <p className="text-sm text-muted-foreground text-center py-4">
+                <p className="text-sm text-zinc-600 text-center py-8">
                   No {s.label.toLowerCase()} questions generated
                 </p>
               )}

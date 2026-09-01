@@ -22,7 +22,7 @@ async function extractPdfText(file: File): Promise<string> {
   for (let i = 1; i <= pdf.numPages; i++) {
     const page = await pdf.getPage(i)
     const content = await page.getTextContent()
-    const pageText = content.items.map((item: any) => item.str).join(" ")
+    const pageText = content.items.map((item) => ("str" in item ? item.str : "")).join(" ")
     textParts.push(pageText)
   }
 
@@ -77,23 +77,25 @@ export function UploadForm({ onResumeText, disabled }: UploadFormProps) {
   return (
     <Card>
       <CardHeader>
-        <CardTitle className="text-lg">Resume</CardTitle>
+        <CardTitle className="text-lg">Your Resume</CardTitle>
       </CardHeader>
-      <CardContent>
+      <CardContent className="space-y-3">
         {fileName ? (
-          <div className="flex items-center gap-3 p-3 rounded-lg bg-muted">
+          <div className="flex items-center gap-3 p-4 rounded-lg bg-zinc-800/50 border border-zinc-800">
             {extracting ? (
-              <Loader2 className="h-8 w-8 text-blue-500 animate-spin" />
+              <Loader2 className="h-8 w-8 text-indigo-400 animate-spin" />
             ) : (
-              <FileText className="h-8 w-8 text-blue-500" />
+              <div className="h-10 w-10 rounded-lg bg-indigo-500/10 flex items-center justify-center">
+                <FileText className="h-5 w-5 text-indigo-400" />
+              </div>
             )}
             <div className="flex-1 min-w-0">
               <p className="text-sm font-medium truncate">{fileName}</p>
-              <p className="text-xs text-muted-foreground">
-                {extracting ? "Extracting text..." : "File loaded"}
+              <p className="text-xs text-zinc-500">
+                {extracting ? "Extracting text..." : "Ready for analysis"}
               </p>
             </div>
-            <Button variant="ghost" size="icon" onClick={clearFile} disabled={disabled || extracting}>
+            <Button variant="ghost" size="icon" onClick={clearFile} disabled={disabled || extracting} className="shrink-0">
               <X className="h-4 w-4" />
             </Button>
           </div>
@@ -103,13 +105,17 @@ export function UploadForm({ onResumeText, disabled }: UploadFormProps) {
             onDragLeave={() => setDragOver(false)}
             onDrop={onDrop}
             onClick={() => inputRef.current?.click()}
-            className={`flex flex-col items-center justify-center p-8 border-2 border-dashed rounded-lg cursor-pointer transition-colors ${
-              dragOver ? "border-primary bg-primary/5" : "border-muted-foreground/25 hover:border-primary/50"
+            className={`flex flex-col items-center justify-center p-10 border-2 border-dashed rounded-xl cursor-pointer transition-all duration-200 ${
+              dragOver
+                ? "border-indigo-500 bg-indigo-500/5"
+                : "border-zinc-700 hover:border-zinc-600 hover:bg-zinc-800/30"
             }`}
           >
-            <Upload className="h-10 w-10 text-muted-foreground mb-3" />
-            <p className="text-sm font-medium">Drop your resume here or click to browse</p>
-            <p className="text-xs text-muted-foreground mt-1">Supports PDF and TXT</p>
+            <div className={`h-12 w-12 rounded-xl flex items-center justify-center mb-4 transition-colors ${dragOver ? "bg-indigo-500/10" : "bg-zinc-800"}`}>
+              <Upload className={`h-6 w-6 ${dragOver ? "text-indigo-400" : "text-zinc-500"}`} />
+            </div>
+            <p className="text-sm font-medium text-zinc-300 mb-1">Drop your resume here or click to browse</p>
+            <p className="text-xs text-zinc-600">Supports PDF and TXT files</p>
           </div>
         )}
         <input

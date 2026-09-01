@@ -1,17 +1,81 @@
 import axios from "axios"
-import type { AnalysisResult, RewrittenResume } from "@/types"
 
 const api = axios.create({
-  baseURL: "http://localhost:8000",
+  baseURL: "http://localhost:8001",
   headers: {
     "Content-Type": "application/json",
   },
 })
 
-export async function healthCheck(): Promise<{ status: string }> {
-  const { data } = await api.get("/")
+// ── Token management ───────────────────────────────────────────────────────
+
+export function getToken(): string | null {
+  return localStorage.getItem("token")
+}
+
+export function setToken(token: string) {
+  localStorage.setItem("token", token)
+}
+
+export function removeToken() {
+  localStorage.removeItem("token")
+}
+
+// ── Attach token to every request ──────────────────────────────────────────
+
+api.interceptors.request.use((config) => {
+  const token = getToken()
+  if (token) {
+    config.headers.Authorization = `Bearer ${token}`
+  }
+  return config
+})
+
+// ── Handle 401 responses globally ──────────────────────────────────────────
+
+api.interceptors.response.use(
+  (response) => response,
+  (error) => {
+    if (error.response?.status === 401 && window.location.pathname !== "/login" && window.location.pathname !== "/register") {
+      removeToken()
+      window.location.href = "/login"
+    }
+    return Promise.reject(error)
+  }
+)
+
+// ── Auth API ───────────────────────────────────────────────────────────────
+
+export interface AuthUser {
+  id: string
+  name: string
+  email: string
+}
+
+export interface AuthResponse {
+  access_token: string
+  token_type: string
+  user: AuthUser
+}
+
+export async function registerUser(name: string, email: string, password: string): Promise<AuthResponse> {
+  const { data } = await api.post<AuthResponse>("/auth/register", { name, email, password })
   return data
 }
+
+export async function loginUser(email: string, password: string): Promise<AuthResponse> {
+  const { data } = await api.post<AuthResponse>("/auth/login", { email, password })
+  return data
+}
+
+export async function getCurrentUser(): Promise<AuthUser> {
+  const { data } = await api.get<AuthUser>("/auth/me")
+  return data
+}
+
+// ── Analysis API ───────────────────────────────────────────────────────────
+
+import type { AnalysisResult, RewrittenResume } from "@/types"
 
 export async function analyzeResume(
   resumeText: string,

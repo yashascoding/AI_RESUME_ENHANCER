@@ -3,7 +3,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { ScrollArea } from "@/components/ui/scroll-area"
-import { PenLine, FileText, ArrowRight } from "lucide-react"
+import { PenLine, ArrowRight } from "lucide-react"
 
 interface ResumeEditorProps {
   data: RewrittenResumeType
@@ -15,12 +15,12 @@ export function ResumeEditor({ data }: ResumeEditorProps) {
       <Card>
         <CardHeader>
           <CardTitle className="text-lg flex items-center gap-2">
-            <PenLine className="h-5 w-5" />
+            <PenLine className="h-5 w-5 text-indigo-400" />
             Resume Enhancement
           </CardTitle>
         </CardHeader>
         <CardContent>
-          <p className="text-sm text-muted-foreground mb-4">{data.changes_summary}</p>
+          <p className="text-sm text-zinc-400">{data.changes_summary}</p>
         </CardContent>
       </Card>
 
@@ -38,21 +38,24 @@ export function ResumeEditor({ data }: ResumeEditorProps) {
                   <CardHeader className="pb-2">
                     <div className="flex items-center justify-between">
                       <CardTitle className="text-base capitalize">{section.section}</CardTitle>
-                      <Badge variant="outline">Modified</Badge>
+                      <Badge variant="info">Modified</Badge>
                     </div>
                   </CardHeader>
                   <CardContent>
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                      <div className="p-3 rounded-lg bg-red-50 border border-red-200">
-                        <p className="text-xs font-medium text-red-600 mb-2">Original</p>
-                        <p className="text-sm whitespace-pre-wrap">{section.original}</p>
+                      <div className="p-4 rounded-lg bg-red-500/5 border border-red-500/10">
+                        <p className="text-xs font-medium text-red-400 mb-2 uppercase tracking-wider">Original</p>
+                        <p className="text-sm text-zinc-300 whitespace-pre-wrap leading-relaxed">{section.original}</p>
                       </div>
-                      <div className="p-3 rounded-lg bg-green-50 border border-green-200">
-                        <p className="text-xs font-medium text-green-600 mb-2">Improved</p>
-                        <p className="text-sm whitespace-pre-wrap">{section.improved}</p>
+                      <div className="p-4 rounded-lg bg-emerald-500/5 border border-emerald-500/10">
+                        <div className="flex items-center gap-1.5 mb-2">
+                          <ArrowRight className="h-3 w-3 text-emerald-400" />
+                          <p className="text-xs font-medium text-emerald-400 uppercase tracking-wider">Improved</p>
+                        </div>
+                        <p className="text-sm text-zinc-300 whitespace-pre-wrap leading-relaxed">{section.improved}</p>
                       </div>
                     </div>
-                    <p className="text-xs text-muted-foreground mt-2 italic">
+                    <p className="text-xs text-zinc-500 mt-3 italic">
                       {section.changes_made}
                     </p>
                   </CardContent>
@@ -64,7 +67,7 @@ export function ResumeEditor({ data }: ResumeEditorProps) {
               <Card>
                 <CardContent className="pt-4">
                   <ScrollArea className="max-h-[500px]">
-                    <pre className="text-sm whitespace-pre-wrap font-sans">
+                    <pre className="text-sm whitespace-pre-wrap font-sans text-zinc-300 leading-relaxed">
                       {data.full_improved_resume}
                     </pre>
                   </ScrollArea>
