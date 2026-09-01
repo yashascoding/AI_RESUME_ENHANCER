@@ -1,0 +1,25 @@
+services:
+  - type: web
+    name: ai-resume-enhancer
+    runtime: docker
+    plan: free
+    dockerfilePath: Dockerfile
+    envVars:
+      - key: GROQ_API_KEY
+        sync: false
+      - key: MONGO_URL
+        fromDatabase:
+          name: ai-resume-mongo
+          property: connectionString
+      - key: REDIS_URL
+        fromDatabase:
+          name: ai-resume-redis
+          property: connectionString
+    healthCheckPath: /
+
+databases:
+  - name: ai-resume-mongo
+    plan: free
+    databaseName: ai_resume_db
+  - name: ai-resume-redis
+    plan: free

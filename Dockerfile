@@ -30,6 +30,6 @@ WORKDIR /app
 # Copy uploads directory if it exists (for volume mount)
 RUN mkdir -p uploads
 
-EXPOSE 8000
+EXPOSE $PORT
 
-CMD ["uvicorn", "app.server:app", "--host", "0.0.0.0", "--port", "8000"]
+CMD sh -c "uvicorn app.server:app --host 0.0.0.0 --port $PORT"
