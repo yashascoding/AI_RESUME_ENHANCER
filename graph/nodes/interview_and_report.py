@@ -49,7 +49,7 @@ def interview_and_report_node(ai_service: Any):
         result = await ai_service.generate(
             system_prompt=(
                 "You are a career coach. Based on the candidate's resume and job keywords:\n"
-                "1. Generate 8 interview questions (mix of technical and behavioral)\n"
+                "1. Generate 14 interview questions (mix of technical, behavioral, and project-based)\n"
                 "2. List 3 strengths\n"
                 "3. List 3 weaknesses\n"
                 "4. Give 3 actionable recommendations\n"

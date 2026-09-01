@@ -215,6 +215,16 @@ async def upload_file(file: UploadFile, _user: dict = Depends(get_current_user))
 @app.post("/analyze")
 async def analyze_resume(req: AnalyzeRequest, _user: dict = Depends(get_current_user)):
     """Run the full LangGraph resume analysis pipeline and return all node outputs."""
+    # ── Free tier check ──────────────────────────────────────────────
+    analysis_count = await analyses_collection.count_documents({"user_id": _user["id"]})
+    FREE_TIER_LIMIT = 2
+    if analysis_count >= FREE_TIER_LIMIT:
+        log.warning("Free tier limit reached: user=%s count=%d", _user["email"], analysis_count)
+        raise HTTPException(
+            status_code=403,
+            detail=f"Free trial limit reached ({FREE_TIER_LIMIT} analyses). Upgrade to Pro for unlimited analyses and resume generation."
+        )
+
     # ── Check Redis cache ──────────────────────────────────────────────
     cache_key = None
     if REDIS_AVAILABLE:
@@ -272,17 +282,17 @@ async def analyze_resume(req: AnalyzeRequest, _user: dict = Depends(get_current_
 
     # ── Save to MongoDB for history ───────────────────────────────────
     try:
-        __import__("datetime")
+        import datetime
         await analyses_collection.insert_one({
             "user_id": _user["id"],
-            "resume_text": req.resume_text[:500],  # Store first 500 chars for reference
+            "resume_text": req.resume_text[:500],
             "job_description": req.job_description[:500],
             "result": response,
-            "created_at": __import__("datetime").datetime.now(__import__("datetime").timezone.utc).isoformat(),
+            "created_at": datetime.datetime.now(datetime.timezone.utc).isoformat(),
         })
         log.info("Analysis saved to MongoDB for user=%s", _user["email"])
     except Exception as e:
-        log.warning("Failed to save analysis to MongoDB: %s", e)
+        log.warning("Failed to save analysis to MongoDB: %s", e, exc_info=True)
 
     log.info("Analysis complete: user=%s keys=%s", _user["email"], list(response.keys()))
     return response
@@ -322,9 +332,9 @@ async def list_analyses(_user: dict = Depends(get_current_user)):
     log.info("Listing analyses for user=%s", _user["email"])
     cursor = analyses_collection.find(
         {"user_id": _user["id"]},
-        {"result": 0, "resume_text": 0, "job_description": 0}  # Exclude large fields
+        {"result": 0, "resume_text": 0, "job_description": 0}
     ).sort("created_at", -1).limit(20)
-    
+
     analyses = []
     async for doc in cursor:
         analyses.append({
@@ -333,20 +343,43 @@ async def list_analyses(_user: dict = Depends(get_current_user)):
             "ats_score": doc.get("result", {}).get("ats_score", {}).get("overall_score", 0),
             "candidate_name": doc.get("result", {}).get("parsed_resume", {}).get("name", "Unknown"),
         })
-    
+
     log.info("Found %d analyses for user=%s", len(analyses), _user["email"])
     return analyses
+
+
+@app.get("/analyses/count")
+async def get_analysis_count(_user: dict = Depends(get_current_user)):
+    """Get the number of analyses for the current user."""
+    count = await analyses_collection.count_documents({"user_id": _user["id"]})
+    return {"count": count, "limit": 2, "is_pro": count >= 100}
 
 
 @app.get("/analyses/{analysis_id}")
 async def get_analysis(analysis_id: str = Path(...), _user: dict = Depends(get_current_user)):
     """Get a specific analysis by ID."""
     log.info("Getting analysis: id=%s user=%s", analysis_id, _user["email"])
-    doc = await analyses_collection.find_one({"_id": ObjectId(analysis_id), "user_id": _user["id"]})
+    try:
+        doc = await analyses_collection.find_one({"_id": ObjectId(analysis_id), "user_id": _user["id"]})
+    except Exception as e:
+        log.error("Invalid analysis ID: %s error=%s", analysis_id, e)
+        raise HTTPException(status_code=400, detail="Invalid analysis ID")
     if not doc:
         log.warning("Analysis not found: id=%s", analysis_id)
         raise HTTPException(status_code=404, detail="Analysis not found")
-    
+
     result = doc.get("result", {})
     result["created_at"] = doc.get("created_at", "")
     return result
+
+
+@app.delete("/analyses/{analysis_id}")
+async def delete_analysis(analysis_id: str = Path(...), _user: dict = Depends(get_current_user)):
+    """Delete a specific analysis by ID."""
+    log.info("Deleting analysis: id=%s user=%s", analysis_id, _user["email"])
+    result = await analyses_collection.delete_one({"_id": ObjectId(analysis_id), "user_id": _user["id"]})
+    if result.deleted_count == 0:
+        log.warning("Analysis not found for deletion: id=%s", analysis_id)
+        raise HTTPException(status_code=404, detail="Analysis not found")
+    log.info("Analysis deleted: id=%s", analysis_id)
+    return {"status": "deleted"}

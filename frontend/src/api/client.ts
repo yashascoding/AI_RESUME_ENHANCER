@@ -124,4 +124,13 @@ export async function getAnalysisById(id: string): Promise<AnalysisResult> {
   return data
 }
 
+export async function deleteAnalysis(id: string): Promise<void> {
+  await api.delete(`/analyses/${id}`)
+}
+
+export async function getAnalysisCount(): Promise<{ count: number; limit: number; is_pro: boolean }> {
+  const { data } = await api.get("/analyses/count")
+  return data
+}
+
 export default api

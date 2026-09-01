@@ -30,15 +30,17 @@ GROQ_API_KEY=your_groq_api_key_here
 ```
 AI_RESUME_ENHANCER/
 ├── app/                          # FastAPI backend
-│   ├── server.py                 # Routes: /auth/*, /analyze, /rewrite, /upload, /files/{id}
+│   ├── server.py                 # Routes: /auth/*, /analyze, /analyses/*, /rewrite
 │   ├── main.py                   # Uvicorn entry point
 │   ├── auth.py                   # JWT auth: register, login, token utils, password hashing
 │   ├── ai_service.py             # Groq client with rate limiting, caching, retry, semaphore
+│   ├── jd_extractor.py           # Deterministic JD keyword extraction (no LLM)
 │   ├── db/
 │   │   ├── client.py             # Motor (async MongoDB) client → localhost:27017
 │   │   ├── db.py                 # Database: Local_RAG
 │   │   └── collections/
 │   │       ├── files.py          # files collection
+│   │       ├── analyses.py       # analyses collection (user history)
 │   │       └── (users created dynamically in auth.py)
 │   ├── queue/
 │   │   ├── q.py                  # Redis queue setup (localhost:6379)
@@ -48,31 +50,15 @@ AI_RESUME_ENHANCER/
 │
 ├── graph/                        # LangGraph AI pipeline
 │   ├── __init__.py               # Exports build_graph, GraphState
-│   ├── builder.py                # Graph definition (3 nodes, 2-3 LLM calls)
+│   ├── builder.py                # Graph definition (2 nodes, 2 LLM calls)
 │   ├── state.py                  # All Pydantic models + GraphState TypedDict
-│   ├── router.py                 # Conditional routing (ATS < 75 → rewrite)
+│   ├── router.py                 # Always routes to interview_and_report
 │   ├── nodes/
-│   │   ├── combined_analysis.py  # LLM Call #1: parse+skills+experience+JD+gap+ATS
-│   │   ├── resume_rewriter.py    # LLM Call #2: rewrite (conditional)
-│   │   ├── interview_and_report.py # LLM Call #3: interview+career report
-│   │   ├── resume_parser.py      # (legacy, kept for /rewrite endpoint)
-│   │   ├── skill_extractor.py    # (legacy)
-│   │   ├── experience_analyzer.py # (legacy)
-│   │   ├── jd_skill_extractor.py # (legacy)
-│   │   ├── gap_analysis.py       # (legacy)
-│   │   ├── ats_scoring.py        # (legacy)
-│   │   └── career_report.py      # (legacy)
+│   │   ├── combined_analysis.py  # LLM Call #1: parse + gap analysis (ATS is deterministic)
+│   │   ├── interview_and_report.py # LLM Call #2: interview questions + recommendations
+│   │   └── resume_rewriter.py    # LLM call for /rewrite endpoint (simplified schema)
 │   └── prompts/
-│       ├── combined_prompt.py    # System prompt for combined analysis
-│       ├── parser_prompt.py      # (legacy)
-│       ├── skill_prompt.py       # (legacy)
-│       ├── experience_prompt.py  # (legacy)
-│       ├── jd_prompt.py          # (legacy)
-│       ├── gap_prompt.py         # (legacy)
-│       ├── ats_prompt.py         # (legacy)
-│       ├── rewrite_prompt.py     # (legacy)
-│       ├── interview_prompt.py   # (legacy)
-│       └── report_prompt.py      # (legacy)
+│       └── combined_prompt.py    # System prompt (legacy, kept for reference)
 │
 ├── frontend/                     # React + TypeScript + Vite + Tailwind v4
 │   ├── src/
@@ -80,10 +66,10 @@ AI_RESUME_ENHANCER/
 │   │   ├── main.tsx              # React root
 │   │   ├── index.css             # Tailwind v4 theme (dark mode, Inter font)
 │   │   ├── api/
-│   │   │   └── client.ts         # Axios + JWT interceptor + auth/analysis API functions
+│   │   │   └── client.ts         # Axios + JWT interceptor + auth/analysis/history API
 │   │   ├── hooks/
 │   │   │   ├── useAuth.tsx        # Auth context (login, register, logout, user)
-│   │   │   └── useAnalysis.tsx   # Analysis context (run analysis, rewrite, results)
+│   │   │   └── useAnalysis.tsx   # Analysis context (run analysis, load past, results)
 │   │   ├── components/
 │   │   │   ├── auth/
 │   │   │   │   └── ProtectedRoute.tsx  # Route guards (ProtectedRoute, GuestRoute)
@@ -94,18 +80,16 @@ AI_RESUME_ENHANCER/
 │   │   │   │   ├── button.tsx, card.tsx, badge.tsx, tabs.tsx
 │   │   │   │   ├── input.tsx, textarea.tsx, progress.tsx
 │   │   │   │   ├── separator.tsx, scroll-area.tsx
-│   │   │   ├── resume/           # Upload, JD input, parsed resume, experience, editor
-│   │   │   ├── skills/           # Skills overview, JD skills card
+│   │   │   ├── resume/           # Upload, JD input, parsed resume
 │   │   │   ├── interview/        # Interview questions, question cards
-│   │   │   ├── career/           # Hiring readiness, overall summary
 │   │   │   └── dashboard/        # ATS gauge, score breakdown, gap table, strengths
 │   │   ├── pages/
-│   │   │   ├── Landing.tsx       # Public landing page
+│   │   │   ├── Landing.tsx       # Public landing page (no Sign In button)
 │   │   │   ├── Login.tsx         # Login form
 │   │   │   ├── Register.tsx      # Register form
-│   │   │   ├── Dashboard.tsx     # App dashboard (protected)
+│   │   │   ├── Dashboard.tsx     # Previous analyses + delete + free tier + upgrade modal
 │   │   │   ├── Analysis.tsx      # Upload + JD input workspace (protected)
-│   │   │   └── Results.tsx       # 9-tab results dashboard (protected)
+│   │   │   └── Results.tsx       # 4-tab results: Overview, Resume, Gap, Interview
 │   │   ├── types/
 │   │   │   └── index.ts          # All TypeScript interfaces
 │   │   └── lib/
@@ -113,8 +97,10 @@ AI_RESUME_ENHANCER/
 │   └── package.json
 │
 ├── uploads/                      # Uploaded PDFs (UUID-named folders)
+├── tests/                        # 16 tests (ai_service, router, frontend)
 ├── requirement.txt               # Python dependencies
-└── run.sh                        # Backend start script
+├── AGENTS.md                     # This file
+└── Errors.md                     # Known issues tracker
 ```
 
 ## API Endpoints
@@ -134,8 +120,12 @@ AI_RESUME_ENHANCER/
 | Method | Path | Description |
 |--------|------|-------------|
 | `GET` | `/auth/me` | Get current user |
-| `POST` | `/analyze` | Run full analysis pipeline |
-| `POST` | `/rewrite` | Rewrite resume sections |
+| `POST` | `/analyze` | Run full analysis (free tier: max 2 per user) |
+| `GET` | `/analyses` | List past analyses for current user |
+| `GET` | `/analyses/count` | Get analysis count + tier info |
+| `GET` | `/analyses/{id}` | Get specific analysis by ID |
+| `DELETE` | `/analyses/{id}` | Delete an analysis |
+| `POST` | `/rewrite` | Rewrite resume (simplified schema) |
 | `POST` | `/upload` | Upload PDF file |
 | `GET` | `/files/{id}` | Get file status |
 
@@ -145,30 +135,34 @@ AI_RESUME_ENHANCER/
 START
   │
   ▼
-Combined Analysis ─────── LLM Call #1 (parse + skills + experience + JD + gap + ATS)
+Combined Analysis ─────── LLM Call #1 (parse resume)
   │
-  ├── if ATS < 75 ──→ Resume Rewrite ──→ LLM Call #2
-  │                                            │
-  ├── if ATS >= 75 ────────────────────────────┤
-  │                                            │
-  ▼                                            ▼
-Interview + Report ────── LLM Call #3 (interview questions + career report)
+  │                       JD Keywords ── extracted deterministically (no LLM)
+  │                       ATS Score ──── computed deterministically (no LLM)
+  │
+  ▼
+Interview + Report ────── LLM Call #2 (14 questions + recommendations)
   │
   ▼
  END
 ```
 
-**2-3 LLM calls per analysis** (down from 7-9).
+**2 LLM calls per analysis** (down from 7-9). ATS scoring is deterministic.
 
 ## Key Design Decisions
 
 - **JWT auth**: 24h expiry, bcrypt password hashing, MongoDB users collection
 - **Rate limiting**: asyncio.Semaphore(3) limits concurrent Groq requests
-- **Caching**: SHA256-based in-memory cache, 1h TTL
+- **Caching**: SHA256-based in-memory cache (1h) + Redis cache (24h)
 - **Retry**: Exponential backoff with retry-after header respect
 - **Lazy init**: Groq client initializes on first use (server starts without API key)
 - **Dark theme**: #09090b background, Inter font, indigo accent
 - **Protected routes**: React context + ProtectedRoute/GuestRoute wrappers
+- **Free tier**: 2 analyses per user, then upgrade modal (Pro: ₹100 one-time)
+- **JD extraction**: Deterministic keyword extraction (no LLM) handles any-size JDs
+- **ATS scoring**: Deterministic based on skills match, keyword coverage, experience, projects
+- **Interview questions**: 14 questions distributed across technical/behavioral/project categories
+- **History**: MongoDB stores analysis results per user, dashboard shows list with delete
 
 ## Testing
 
@@ -190,3 +184,4 @@ npx vite build
 - **MongoDB lock error**: MongoDB already running. Don't start a second instance.
 - **GROQ_API_KEY not set**: Create `.env` file with your API key.
 - **Rate limiting**: The pipeline uses semaphore(3) + exponential backoff. If you hit limits, the retry logic handles it automatically.
+- **Route ordering**: `/analyses/count` must be defined before `/analyses/{analysis_id}` in FastAPI.

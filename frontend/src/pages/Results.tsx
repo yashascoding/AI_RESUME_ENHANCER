@@ -8,23 +8,18 @@ import { ScoreBreakdown } from "@/components/dashboard/ScoreBreakdown"
 import { GapAnalysisTable } from "@/components/dashboard/GapAnalysisTable"
 import { StrengthsWeaknesses } from "@/components/dashboard/StrengthsWeaknesses"
 import { ParsedResumeCard } from "@/components/resume/ParsedResumeCard"
-import { ResumeEditor } from "@/components/resume/ResumeEditor"
 import { InterviewQuestions } from "@/components/interview/InterviewQuestions"
 import {
   BarChart3,
   FileText,
   GitCompareArrows,
-  PenLine,
   MessageSquare,
-  Loader2,
-  Pen,
   ArrowLeft,
-  CheckCircle2,
   Lightbulb,
 } from "lucide-react"
 
 export function Results() {
-  const { result, rewritten, rewriting, runRewrite, reset } = useAnalysis()
+  const { result, reset } = useAnalysis()
   const navigate = useNavigate()
 
   if (!result) {
@@ -39,10 +34,6 @@ export function Results() {
         </Button>
       </div>
     )
-  }
-
-  const handleRewrite = async () => {
-    await runRewrite()
   }
 
   return (
@@ -69,14 +60,6 @@ export function Results() {
           >
             New Analysis
           </Button>
-          <Button onClick={handleRewrite} disabled={rewriting} className="gap-2 bg-white text-zinc-900 hover:bg-zinc-200">
-            {rewriting ? (
-              <Loader2 className="h-4 w-4 animate-spin" />
-            ) : (
-              <Pen className="h-4 w-4" />
-            )}
-            Improve Resume
-          </Button>
         </div>
       </div>
 
@@ -99,10 +82,6 @@ export function Results() {
             <TabsTrigger value="interview" className="gap-1.5">
               <MessageSquare className="h-3.5 w-3.5" />
               <span className="hidden sm:inline">Interview</span>
-            </TabsTrigger>
-            <TabsTrigger value="enhance" className="gap-1.5">
-              <PenLine className="h-3.5 w-3.5" />
-              <span className="hidden sm:inline">Enhance</span>
             </TabsTrigger>
           </TabsList>
         </div>
@@ -199,34 +178,6 @@ export function Results() {
             <InterviewQuestions data={result.interview_questions} />
           ) : (
             <EmptyNode label="Interview Generator" />
-          )}
-        </TabsContent>
-
-        {/* Tab 5: Enhance */}
-        <TabsContent value="enhance">
-          {rewritten ? (
-            <ResumeEditor data={rewritten} />
-          ) : result.rewritten_resume ? (
-            <ResumeEditor data={result.rewritten_resume} />
-          ) : (
-            <Card>
-              <CardContent className="flex flex-col items-center justify-center py-16 space-y-4">
-                <div className="h-14 w-14 rounded-full bg-zinc-800 flex items-center justify-center">
-                  <PenLine className="h-7 w-7 text-zinc-500" />
-                </div>
-                <p className="text-zinc-400 text-center max-w-sm">
-                  Resume was not rewritten. Use the button above to generate improvements.
-                </p>
-                <Button onClick={handleRewrite} disabled={rewriting} className="gap-2 bg-white text-zinc-900 hover:bg-zinc-200">
-                  {rewriting ? (
-                    <Loader2 className="h-4 w-4 animate-spin" />
-                  ) : (
-                    <Pen className="h-4 w-4" />
-                  )}
-                  Generate Improved Resume
-                </Button>
-              </CardContent>
-            </Card>
           )}
         </TabsContent>
       </Tabs>

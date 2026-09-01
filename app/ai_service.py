@@ -154,12 +154,68 @@ def _nested_fields(model: type[BaseModel]) -> str:
 
 
 def _fix_json_string(s: str) -> str:
-    """Fix common JSON string issues from LLMs: unescaped quotes, newlines, etc."""
+    """Fix common JSON string issues from LLMs: unescaped quotes, newlines, backticks, etc."""
     # Remove control characters except \n, \t
     s = re.sub(r'[\x00-\x08\x0b\x0c\x0e-\x1f]', '', s)
     # Fix trailing commas before } or ]
     s = re.sub(r',\s*([}\]])', r'\1', s)
+    # Replace backtick-wrapped strings with regular strings: `text` -> "text"
+    s = re.sub(r'`([^`]*)`', r'"\1"', s)
     return s
+
+
+def _fix_truncated_string_values(text: str) -> str:
+    """Fix truncated JSON where string values are cut off mid-word.
+    
+    Examples:
+        "skills": ["python", "java", "micr -> "skills": ["python", "java"]
+        "name": "John Do -> "name": "John"
+        "summary": "CS student with strong fo -> "summary": "CS student"
+    """
+    result = text
+    
+    # Pattern 1: Truncated array item - find last complete item
+    # Match: ..., "last_complete_item"] or ..., last_complete_item]
+    # before a cutoff like , "incomplete" or , incomplete
+    result = re.sub(
+        r',\s*"[^"]*$',   # truncated string at end like: , "micr
+        ']',
+        result
+    )
+    result = re.sub(
+        r',\s*[a-zA-Z_][a-zA-Z0-9_]*$',  # truncated unquoted value at end
+        ']',
+        result
+    )
+    
+    # Pattern 2: Truncated object value - find last complete key-value pair
+    # Match: ..., "key": "value" or ..., "key": 123
+    # before cutoff like: , "key": "incomplete
+    result = re.sub(
+        r',\s*"[^"]*"\s*:\s*"[^"]*$',  # truncated: , "key": "partial
+        '',
+        result
+    )
+    result = re.sub(
+        r',\s*"[^"]*"\s*:\s*[0-9]+[.\d]*$',  # truncated: , "key": 123
+        '',
+        result
+    )
+    result = re.sub(
+        r',\s*"[^"]*"\s*:\s*[a-zA-Z_][a-zA-Z0-9_]*$',  # truncated: , "key": true/false/null
+        '',
+        result
+    )
+    
+    # Pattern 3: Truncated at start of a value
+    # Match: "key": "value", "next_key": "trunca -> remove the truncated part
+    result = re.sub(
+        r',\s*"[^"]*"\s*:\s*"[^"]*$',  # last incomplete kv pair
+        '',
+        result
+    )
+    
+    return result
 
 
 def _extract_json(text: str) -> str | None:
@@ -172,6 +228,13 @@ def _extract_json(text: str) -> str | None:
         if text.endswith("```"):
             text = text[: text.rfind("```")]
         text = text.strip()
+
+    # Pre-process: replace backtick-wrapped values with proper JSON strings
+    # Pattern: {"key": `value`} -> {"key": "value"}
+    # Handle multi-line backtick strings
+    if '`' in text:
+        # Replace backticks with double quotes (simple approach)
+        text = text.replace('`', '"')
 
     # Try direct parse first
     if text.startswith("{"):
@@ -233,6 +296,21 @@ def _extract_json(text: str) -> str | None:
     # Last resort: try to fix truncated JSON by closing open brackets
     if first != -1:
         truncated = text[first:]
+
+        # Handle truncated strings: find last complete value before cutoff
+        # e.g., "missing_skills": ["a", "b", "microse" -> close array at "b"
+        fixed_truncated = _fix_truncated_string_values(truncated)
+        if fixed_truncated != truncated:
+            opens = fixed_truncated.count("{") - fixed_truncated.count("}")
+            opens_arr = fixed_truncated.count("[") - fixed_truncated.count("]")
+            attempt = _fix_json_string(fixed_truncated) + "]" * max(0, opens_arr) + "}" * max(0, opens)
+            try:
+                json.loads(attempt)
+                log.info("Fixed truncated JSON with string recovery")
+                return attempt
+            except json.JSONDecodeError:
+                pass
+
         # Count open brackets and close them
         opens = truncated.count("{") - truncated.count("}")
         opens_arr = truncated.count("[") - truncated.count("]")
@@ -426,6 +504,13 @@ class AIService:
                 json_str = _extract_json(raw)
                 if json_str is None:
                     log.warning("No JSON found (attempt %d), response length=%d", attempt + 1, len(raw))
+                    # On JSON extraction failure, retry with shorter input
+                    if attempt < retries - 1:
+                        # Shorten the user prompt for next attempt
+                        shorter_prompt = user_prompt[:len(user_prompt)//2] + "\n\n[Response was truncated - please provide shorter, more concise output]"
+                        user_prompt = shorter_prompt
+                        log.info("Retrying with shorter input (%d chars)", len(user_prompt))
+                        continue
                     raise ValueError(f"No JSON found in LLM response: {raw[:200]}")
 
                 try:

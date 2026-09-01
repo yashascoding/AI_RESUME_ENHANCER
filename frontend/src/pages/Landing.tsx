@@ -125,7 +125,7 @@ const problems = [
 
 export function Landing() {
   return (
-    <div className="min-h-screen bg-[#09090b] text-white">
+    <div className="min-h-screen bg-[#09090b] text-white overflow-x-hidden">
       {/* Navigation */}
       <nav className="fixed top-0 left-0 right-0 z-50 bg-[#09090b]/80 backdrop-blur-xl border-b border-zinc-800/50">
         <div className="max-w-6xl mx-auto px-4 lg:px-6 h-14 flex items-center justify-between">
@@ -143,12 +143,9 @@ export function Landing() {
           </div>
 
           <div className="flex items-center gap-3">
-            <Link to="/login">
-              <Button variant="ghost" size="sm" className="hidden sm:flex">Sign In</Button>
-            </Link>
             <Link to="/analyze">
               <Button size="sm" className="bg-white text-zinc-900 hover:bg-zinc-200">
-                Analyze My Resume
+                Get Started
                 <ArrowUpRight className="h-3.5 w-3.5" />
               </Button>
             </Link>
@@ -157,20 +154,29 @@ export function Landing() {
       </nav>
 
       {/* Hero Section */}
-      <section className="relative pt-32 pb-20 lg:pt-40 lg:pb-32 overflow-hidden">
-        {/* Subtle grid background */}
-        <div className="absolute inset-0 bg-[linear-gradient(to_right,#18181b_1px,transparent_1px),linear-gradient(to_bottom,#18181b_1px,transparent_1px)] bg-[size:4rem_4rem] [mask-image:radial-gradient(ellipse_60%_50%_at_50%_0%,#000_70%,transparent_110%)] opacity-40" />
+      <section className="relative min-h-screen overflow-hidden pt-14">
+        {/* Background video */}
+        <video
+          autoPlay
+          muted
+          loop
+          playsInline
+          className="absolute inset-0 h-full w-full object-cover opacity-35"
+        >
+          <source src="/videos/mixkit-open-office-space-914-hd-ready.mp4" type="video/mp4" />
+        </video>
 
-        <div className="relative max-w-6xl mx-auto px-4 lg:px-6">
-          <div className="grid lg:grid-cols-2 gap-12 lg:gap-16 items-center">
+        {/* Dark overlay */}
+        <div className="absolute inset-0 bg-[#09090b]/50" />
+
+        {/* Gradient for better text readability */}
+        <div className="absolute inset-0 bg-gradient-to-b from-[#09090b]/30 via-[#09090b]/60 to-[#09090b]" />
+
+        <div className="relative z-10 max-w-6xl mx-auto px-4 lg:px-6 py-20 lg:py-32">
+          <div className="grid lg:grid-cols-2 gap-12 lg:gap-16 items-center min-h-[calc(100vh-8rem)]">
             {/* Left: Copy */}
             <div className="space-y-8">
               <div className="space-y-6">
-                <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full border border-zinc-700/50 bg-zinc-800/50 text-xs font-medium text-zinc-400">
-                  <Sparkles className="h-3 w-3 text-indigo-400" />
-                  AI-POWERED CAREER INTELLIGENCE
-                </div>
-
                 <h1 className="text-4xl sm:text-5xl lg:text-6xl font-bold tracking-tight leading-[1.1]">
                   Turn your resume into{" "}
                   <span className="text-zinc-400">your strongest</span>{" "}
@@ -185,7 +191,7 @@ export function Landing() {
               <div>
                 <Link to="/analyze">
                   <Button size="xl" className="bg-white text-zinc-900 hover:bg-zinc-200">
-                    Analyze My Resume
+                    Get Started
                     <ArrowRight className="h-4 w-4" />
                   </Button>
                 </Link>
@@ -205,7 +211,7 @@ export function Landing() {
             {/* Right: Product Preview */}
             <div className="relative">
               <div className="absolute -inset-4 bg-gradient-to-r from-indigo-500/10 via-transparent to-purple-500/10 rounded-2xl blur-2xl" />
-              <div className="relative bg-[#0f0f12] border border-zinc-800 rounded-2xl p-6 shadow-2xl">
+              <div className="relative bg-[#0f0f12]/90 backdrop-blur-sm border border-zinc-800 rounded-2xl p-6 shadow-2xl">
                 {/* Window chrome */}
                 <div className="flex items-center gap-2 mb-5">
                   <div className="h-3 w-3 rounded-full bg-zinc-700" />
@@ -227,7 +233,7 @@ export function Landing() {
                         <span className="text-[10px] text-zinc-500">/100</span>
                       </div>
                     </div>
-                    <span className="text-xs text-zinc-400 mt-2 font-medium">ATS Readiness</span>
+                    <span className="text-xs text-zinc-400 mt-2 font-medium"></span>
                   </div>
 
                   <div className="flex-1 space-y-3">
@@ -500,9 +506,9 @@ export function Landing() {
                     <circle cx="50" cy="50" r="42" fill="none" stroke="#6366f1" strokeWidth="4" strokeLinecap="round" strokeDasharray="264" strokeDashoffset={264 - (264 * 78) / 100} />
                   </svg>
                   <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-[calc(50%-1rem)] flex flex-col items-center">
-                    <span className="text-5xl font-bold tracking-tight">78</span>
-                    <span className="text-sm text-zinc-500 mt-1">ATS Readiness</span>
-                    <span className="text-xs text-zinc-600">/100</span>
+                    <span className="text-2xl font-bold mb-10">78</span>
+                    <span className="text-sm text-zinc-500 mt-0"></span>
+                    <span className="text-xs text-zinc-600"></span>
                   </div>
                 </div>
 
@@ -763,7 +769,7 @@ export function Landing() {
           <div className="flex flex-col sm:flex-row gap-3 justify-center">
             <Link to="/analyze">
               <Button size="xl" className="bg-white text-zinc-900 hover:bg-zinc-200">
-                Analyze My Resume
+                Get Started
                 <ArrowRight className="h-4 w-4" />
               </Button>
             </Link>
