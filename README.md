@@ -4,11 +4,17 @@ An intelligent resume analysis platform that evaluates resumes against job descr
 
 ---
 
+## Demo Video
+
+[Download Demo Video](AI_resume_enhancer_demo_video.mp4)
+
+---
+
 ## Overview
 
-Job seekers often struggle to tailor resumes for specific roles and understand how Applicant Tracking Systems (ATS) score their applications. This project addresses that by orchestrating **9 specialized AI nodes** into a single analysis pipeline.
+Job seekers often struggle to tailor resumes for specific roles and understand how Applicant Tracking Systems (ATS) score their applications. This project addresses that by orchestrating **3 optimized AI nodes** into a single analysis pipeline, reducing LLM calls from 7-9 down to 2-3.
 
-Each node handles one focused task — parsing, skill extraction, gap analysis, scoring, rewriting, and more — and passes structured state forward. The output is a comprehensive, job-specific report instead of a generic resume review.
+The pipeline combines parsing, skill extraction, gap analysis, and ATS scoring into a single node, with conditional resume rewriting and a final interview + career report node. The output is a comprehensive, job-specific report instead of a generic resume review.
 
 **How it works:**
 
@@ -42,7 +48,7 @@ Each node handles one focused task — parsing, skill extraction, gap analysis, 
 
 | Layer | Components |
 |-------|------------|
-| **Frontend** | React 19, Vite, Tailwind CSS,  |
+| **Frontend** | React 19, Vite, Tailwind CSS, TypeScript, Recharts, Axios |
 | **API** | FastAPI — `/analyze`, `/rewrite`, `/upload`, `/files/{id}` |
 | **AI Pipeline** | LangGraph with 3 nodes, conditional routing, parallel execution |
 | **LLM** | Groq (`allam-2-7b` for structured JSON; vision model for PDF upload worker) |
@@ -58,27 +64,17 @@ Each node handles one focused task — parsing, skill extraction, gap analysis, 
 
 | Node | Output |
 |------|--------|
-| `resume_parser` | `ParsedResume` |
-| `skill_extractor` | `ResumeSkills` |
-| `experience_analyzer` | `ExperienceAnalysis` |
-| `jd_skill_extractor` | `JDSkills` |
-| `gap_analysis` | `GapAnalysis` |
-| `ats_scoring` | `ATSScore` |
+| `combined_analysis` | `ParsedResume`, `ResumeSkills`, `ExperienceAnalysis`, `JDSkills`, `GapAnalysis`, `ATSScore` |
 | `resume_rewriter` | `RewrittenResume` *(conditional)* |
-| `interview_generator` | `InterviewQuestions` |
-| `career_report` | `FinalReport` |
+| `interview_and_report` | `InterviewQuestions`, `FinalReport` |
 
-**Routing logic:** If ATS overall score is below **75**, the pipeline runs `resume_rewriter` before interview generation. Stronger resumes skip rewriting.
+**Routing logic:** Currently routes directly to `interview_and_report` for reliability. The `resume_rewriter` node is available but skipped by default.
 
 ---
 
 ### Data Flow
 
 <img width="1084" height="955" alt="image" src="https://github.com/user-attachments/assets/67fa85cb-1e27-4c48-928d-b563e1b2ee3c" />
-
-
----
-
 
 ---
 
@@ -96,11 +92,15 @@ Each node handles one focused task — parsing, skill extraction, gap analysis, 
 AI_RESUME_ENHANCER/
 ├── app/
 │   ├── server.py          # API routes
+│   ├── main.py            # Uvicorn entry point
 │   ├── ai_service.py      # Groq client + structured JSON generation
-│   ├── db/                # MongoDB collections
-│   └── queue/             # Redis/RQ workers
+│   ├── auth.py            # JWT auth (register, login, token utils)
+│   ├── jd_extractor.py    # JD keyword extraction
+│   ├── db/                # MongoDB collections (files, analyses)
+│   ├── queue/             # Redis/RQ workers
+│   └── utils/             # File utilities
 ├── graph/
-│   ├── builder.py         # LangGraph definition
+│   ├── builder.py         # LangGraph definition (3 nodes)
 │   ├── state.py           # GraphState + Pydantic models
 │   ├── router.py          # Conditional ATS routing
 │   ├── nodes/             # Pipeline node implementations
@@ -111,8 +111,12 @@ AI_RESUME_ENHANCER/
 │       ├── components/    # ATS, skills, interview, career UI
 │       ├── hooks/         # Analysis state
 │       └── api/           # Backend client
+├── tests/
 ├── requirement.txt
-└── run.sh
+├── run.sh
+├── Dockerfile
+├── Procfile
+└── pyproject.toml
 ```
 
 ---
@@ -152,7 +156,7 @@ npm run dev
 ```
 
 - Frontend: [http://localhost:5173](http://localhost:5173)
-- API: [http://localhost:8000](http://localhost:8000)
+- API: [http://localhost:8001](http://localhost:8001)
 
 ### Background worker (optional, for PDF upload)
 
@@ -168,10 +172,17 @@ rq worker
 | Method | Endpoint | Description |
 |--------|----------|-------------|
 | `GET` | `/` | Health check |
+| `POST` | `/auth/register` | Register a new user |
+| `POST` | `/auth/login` | Login and get JWT token |
+| `GET` | `/auth/me` | Get current user profile |
 | `POST` | `/analyze` | Run full LangGraph pipeline |
 | `POST` | `/rewrite` | Run resume rewriter only |
 | `POST` | `/upload` | Upload PDF for async processing |
 | `GET` | `/files/{id}` | Poll upload status and result |
+| `GET` | `/analyses` | List past analyses |
+| `GET` | `/analyses/count` | Get analysis count |
+| `GET` | `/analyses/{id}` | Get specific analysis |
+| `DELETE` | `/analyses/{id}` | Delete an analysis |
 
 **Analyze request:**
 
@@ -200,6 +211,6 @@ rq worker
 
 **Structured outputs (Pydantic)** — Every node returns validated JSON so the frontend can render charts, tables, and tabs reliably.
 
-**Conditional rewriting** — Rewriting runs only when ATS score &lt; 75, saving LLM call for resumes that already score well.
+**Conditional rewriting** — Rewriting runs only when ATS score < 75, saving LLM call for resumes that already score well.
 
 **Separate `/rewrite` endpoint** — Allows on-demand enhancement from the Results page without re-running the full pipeline.
