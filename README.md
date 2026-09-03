@@ -37,22 +37,14 @@ Each node handles one focused task — parsing, skill extraction, gap analysis, 
 
 ### System Overview
 
-> **Add image:** `docs/system-architecture.png`
->
-> Draw a high-level component diagram with these boxes and arrows:
-> - **React Frontend** (Vite, port 5173) ↔ **FastAPI Backend** (Uvicorn, port 8000) — label the arrow `REST / JSON`
-> - FastAPI → **LangGraph Pipeline** (9 nodes) → **Groq API**
-> - FastAPI → **MongoDB** (file metadata)
-> - FastAPI → **Redis + RQ** → **Background Worker** → Groq (dashed arrow for async PDF upload path)
->
-> Save the file as `docs/system-architecture.png`, then add it here:
-> `![System Architecture](docs/system-architecture.png)`
+<img width="989" height="714" alt="image" src="https://github.com/user-attachments/assets/993cbcde-1741-4eed-9e75-9dc7a97215cd" />
+
 
 | Layer | Components |
 |-------|------------|
-| **Frontend** | React 19, Vite, Tailwind CSS, Recharts, pdfjs-dist |
+| **Frontend** | React 19, Vite, Tailwind CSS,  |
 | **API** | FastAPI — `/analyze`, `/rewrite`, `/upload`, `/files/{id}` |
-| **AI Pipeline** | LangGraph with 9 nodes, conditional routing, parallel execution |
+| **AI Pipeline** | LangGraph with 3 nodes, conditional routing, parallel execution |
 | **LLM** | Groq (`allam-2-7b` for structured JSON; vision model for PDF upload worker) |
 | **Storage** | MongoDB (Motor) for file records; local disk for uploads |
 | **Queue** | Redis + RQ for async PDF processing |
@@ -61,23 +53,8 @@ Each node handles one focused task — parsing, skill extraction, gap analysis, 
 
 ### LangGraph Pipeline
 
-Nine specialized nodes run in sequence with parallel branches and conditional routing based on ATS score.
+<img width="1349" height="894" alt="image" src="https://github.com/user-attachments/assets/90e9d2ae-f765-4239-8c76-df94fc7da0ee" />
 
-> **Add image:** `docs/langgraph-pipeline.png`
->
-> Draw a flowchart showing this exact flow:
-> 1. **Start** → `resume_parser`
-> 2. Fan out in parallel → `skill_extractor`, `experience_analyzer`, `jd_skill_extractor`
-> 3. All three converge → `gap_analysis` → `ats_scoring`
-> 4. Conditional split from `ats_scoring`:
->    - score **< 75** → `resume_rewriter` → `interview_generator`
->    - score **≥ 75** → `interview_generator` (skip rewriter)
-> 5. `interview_generator` → `career_report` → **End**
->
-> Use a diamond or labeled branch at the ATS step to show the `< 75` condition clearly.
->
-> Save as `docs/langgraph-pipeline.png`, then add it here:
-> `![LangGraph Pipeline](docs/langgraph-pipeline.png)`
 
 | Node | Output |
 |------|--------|
@@ -97,32 +74,11 @@ Nine specialized nodes run in sequence with parallel branches and conditional ro
 
 ### Data Flow
 
-> **Add image:** `docs/data-flow.png`
->
-> Draw a sequence or swimlane diagram for the `/analyze` request:
-> 1. **User** → uploads resume + pastes job description
-> 2. **Frontend** → extracts PDF text via pdfjs → `POST /analyze`
-> 3. **FastAPI** → invokes LangGraph with `resume_text` + `job_description`
-> 4. **LangGraph** → loops through 9 nodes, each calling **Groq** and writing to `GraphState`
-> 5. **FastAPI** → returns combined JSON response
-> 6. **Frontend** → renders Results tabs: Overview, Parsed Resume, Skills, Gap Analysis, Interview, Career
->
-> Optionally annotate key `GraphState` keys on the return path: `parsed_resume`, `ats_score`, `interview_questions`, `final_report`.
->
-> Save as `docs/data-flow.png`, then add it here:
-> `![Data Flow](docs/data-flow.png)`
+<img width="1084" height="955" alt="image" src="https://github.com/user-attachments/assets/67fa85cb-1e27-4c48-928d-b563e1b2ee3c" />
+
 
 ---
 
-### App Screenshots *(optional)*
-
-> **Add images:** `docs/screenshot-dashboard.png`, `docs/screenshot-results.png`
->
-> - **Dashboard** — landing page with feature cards and "Start New Analysis" button
-> - **Results** — ATS score gauge, gap analysis table, and interview questions tab
->
-> After capturing screenshots, add them under a **Screenshots** section near the top of the README using:
-> `![Dashboard](docs/screenshot-dashboard.png)` and `![Results](docs/screenshot-results.png)`
 
 ---
 
